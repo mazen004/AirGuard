@@ -19,7 +19,17 @@ class SensorGraph extends StatelessWidget {
     final prov = Provider.of<SensorNotifierMQTT>(context);
 
     if (!prov.isConnected.value || readings.isEmpty) {
-      return const SizedBox(height: 250, child: Center(child: Text("Waiting for data...")));
+      return SizedBox(
+        height: 250, 
+        child: Center(
+          child: Text(
+            "Waiting for data...",
+            style: TextStyle(
+              fontSize: 16, color: context.mainColors.mutedText
+            ),
+          )
+        )
+      );
     }
 
     final spots = buildSpots();
@@ -30,7 +40,7 @@ class SensorGraph extends StatelessWidget {
 
     final now = DateTime.now();
     final maxX = now.millisecondsSinceEpoch.toDouble();
-    final minX = now.subtract(const Duration(hours: 24)).millisecondsSinceEpoch.toDouble();
+    final minX = now.subtract(const Duration(hours: 23)).millisecondsSinceEpoch.toDouble();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
@@ -65,17 +75,30 @@ class SensorGraph extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                interval: 2 * 3600000, 
-                getTitlesWidget: (val, meta) => bottomTitles(val, meta),
+                interval: 3600000, 
+                getTitlesWidget: (val, meta) => bottomTitles(val, meta, context.mainColors),
               ),
             ),
           ),
           
           lineBarsData: [
             LineChartBarData(
-              spots: spots, isCurved: true, color: sensorColor, barWidth: 3,
-              dotData: FlDotData(show: true, getDotPainter: (a, b, c, d) => FlDotCirclePainter(radius: 2, color: sensorColor)),
-              belowBarData: BarAreaData(show: true, color: sensorColor.withAlpha(50)),
+              barWidth: 3,
+              spots: spots,
+              isCurved: true,
+              color: sensorColor,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+                  radius: 2, 
+                  color: sensorColor,
+                  strokeWidth: 1,
+                )
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                color: sensorColor.withAlpha(50)
+              ),
             ),
           ],
         ),
@@ -83,7 +106,8 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta,) {
+  Widget bottomTitles(double value, TitleMeta meta,
+   dynamic context,) {
     if (value < meta.min || value > meta.max) return const SizedBox.shrink();
 
     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
@@ -98,10 +122,26 @@ class SensorGraph extends StatelessWidget {
           children: [
             Transform.rotate(
               angle: -math.pi/4,
-              child: Text(DateFormat("HH:00").format(date), style: TextStyle(fontSize: 10))
+              child: Text(
+                  DateFormat("HH:00").format(date),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: context.primaryText
+                  )
+                )
               ),
             if (isMidnight)
-              Text(DateFormat("dd/MM").format(date), style: TextStyle(fontSize: 9)),
+              Container(
+                color: Colors.transparent,
+                padding: const EdgeInsets.only(top: 3),
+                child: Text(
+                  DateFormat("dd/MM").format(date),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: context.primaryText
+                  )
+                )
+              ),
           ],
         ),
       ),

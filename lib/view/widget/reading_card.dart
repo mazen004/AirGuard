@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:air_guard/data/constant.dart';
 import 'package:air_guard/data/constant_data.dart';
 import 'package:air_guard/data/notifiers.dart';
+import 'package:provider/provider.dart';
 
 class ReadingCard extends StatefulWidget {
   final ReadingData reading;
@@ -20,6 +21,7 @@ class ReadingCard extends StatefulWidget {
 class _ReadingCardState extends State<ReadingCard> {
   @override
   Widget build(BuildContext context) {
+    final prov = Provider.of<SensorNotifierMQTT>(context);
     return ValueListenableBuilder<int>(
       valueListenable: selectedCardNotifier,
       builder: (context, selectedId, child) {
@@ -78,8 +80,7 @@ class _ReadingCardState extends State<ReadingCard> {
                         children: [
                           FittedBox(
                             child: Text(
-                              widget.readingData.toString(),
-                              // "---",
+                              prov.isConnected.value ? widget.readingData.toString() : "---",
                               style: TextStyle(
                                 color: context.mainColors.primaryText,
                                 fontSize: 20,
