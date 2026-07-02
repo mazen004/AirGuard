@@ -92,6 +92,7 @@ class SensorGraph extends StatelessWidget {
                 getDotPainter: (a, b, c, d) => FlDotCirclePainter(
                   radius: 2, 
                   color: sensorColor,
+                  strokeColor: sensorColor,
                   strokeWidth: 1,
                 )
               ),
