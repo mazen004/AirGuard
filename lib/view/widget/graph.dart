@@ -75,7 +75,7 @@ class SensorGraph extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                interval: 3600000, 
+                interval: 2 * 3600000, 
                 getTitlesWidget: (val, meta) => bottomTitles(val, meta, context.mainColors),
               ),
             ),
