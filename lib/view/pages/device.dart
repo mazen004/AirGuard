@@ -35,17 +35,3 @@ class ConnectedDevices extends StatelessWidget {
     );
   }
 }
-
-// class ConnectedDevices extends StatefulWidget {
-//   const ConnectedDevices({super.key});
-
-//   @override
-//   ConnectedDevicesState createState() => ConnectedDevicesState();
-// }
-
-// class ConnectedDevicesState extends State<ConnectedDevices> {
-//   @override
-//   Widget build(BuildContext context) {
-    
-//   }
-// }
