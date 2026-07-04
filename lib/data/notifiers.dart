@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:air_guard/data/mqtt_server.dart';
 import 'package:air_guard/data/sensor_model.dart';
+import 'package:air_guard/data/storage_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
@@ -78,52 +79,94 @@ class SensorNotifierMQTT extends ChangeNotifier {
       
       updateConnectionStatus(false);
       
-      print("MQTT Disconnected successfully.");
+      debugPrint("MQTT Disconnected successfully.");
     } catch (e) {
-      print("Error disconnecting: $e");
+      debugPrint("Error disconnecting: $e");
     }
   }
 }
 
 class SensorNotifier extends ChangeNotifier {
-  String deviceName = "Air Guard Station";
-  String deviceID = "ESP32_AQI_01";
+  final Map<String, String> _deviceNames = {};
+  String _activeDeviceId = "";
+
+  SensorNotifier() {
+    loadSavedDevices();
+  }
+
+  String get activeDeviceId => _activeDeviceId;
+  Map<String, String> get deviceNames => Map.unmodifiable(_deviceNames);
+  String get deviceName => _deviceNames[_activeDeviceId] ?? "Air Guard";
+  String get deviceID => _activeDeviceId;
 
   SensorReading? current;
-
-  /// Complete history (every MQTT reading)
   final List<SensorReading> _history = [];
-
-  /// Hourly history used by graphs
   final List<SensorReading> _graphHistory = [];
 
-  List<SensorReading> get graphHistory =>
-      List.unmodifiable(_graphHistory);
+  List<SensorReading> get graphHistory => List.unmodifiable(_graphHistory);
 
-  void updateDeviceName(String newName) {
-    if (newName.trim().isEmpty) return;
+  Future<void> loadSavedDevices() async {
+    final savedDevices = await StorageManager.getDevices();
+    _deviceNames.addAll(savedDevices);
 
-    if (newName == deviceName) return;
-
-    deviceName = newName;
+    final savedActiveId = await StorageManager.getActiveDeviceId();
+    if (savedActiveId != null && _deviceNames.containsKey(savedActiveId)) {
+      _activeDeviceId = savedActiveId;
+    } else if (_deviceNames.isNotEmpty) {
+      _activeDeviceId = _deviceNames.keys.first;
+    }
     notifyListeners();
   }
 
-  void processHardwareData(String jsonString) {
+  Future<void> selectDevice(String id) async {
+    if (_deviceNames.containsKey(id)) {
+      _activeDeviceId = id;
+      await StorageManager.saveActiveDeviceId(id);
+      
+      clearHistory(); 
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateDeviceName(String id, String newName) async {
+    if (newName.trim().isEmpty) return;
+    if (!_deviceNames.containsKey(id)) return;
+    if (_deviceNames[id] == newName) return;
+
+    _deviceNames[id] = newName;
+    await StorageManager.saveDevices(_deviceNames);
+    notifyListeners();
+  }
+
+  /// Processes cloud stream
+  void processHardwareData(String jsonString) async {
     try {
       final decoded = jsonDecode(jsonString);
 
-      final reading = SensorReading.fromJson(decoded);
+      final String? incomingDeviceId = decoded['deviceID'];
+      if (incomingDeviceId == null || incomingDeviceId.isEmpty) return;
 
-      current = reading;
+      if (!_deviceNames.containsKey(incomingDeviceId)) {
+        _deviceNames[incomingDeviceId] = "Air Guard";
+        await StorageManager.saveDevices(_deviceNames);
+        
+        if (_activeDeviceId.isEmpty) {
+          _activeDeviceId = incomingDeviceId;
+          await StorageManager.saveActiveDeviceId(incomingDeviceId);
+        }
+        notifyListeners();
+      }
 
-      _history.add(reading);
+      if (incomingDeviceId == _activeDeviceId) {
+        final reading = SensorReading.fromJson(decoded);
 
-      _removeOldHistory(reading.timestamp);
+        current = reading;
+        _history.add(reading);
+        _removeOldHistory(reading.timestamp);
+        updateHourlyHistory(reading);
 
-      _updateHourlyHistory(reading);
-
-      notifyListeners();
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint("Sensor Parsing Error: $e");
     }
@@ -132,225 +175,51 @@ class SensorNotifier extends ChangeNotifier {
   void clearHistory() {
     _history.clear();
     _graphHistory.clear();
-
     notifyListeners();
   }
 
   void _removeOldHistory(DateTime newest) {
-    _history.removeWhere(
-      (element) =>
-          newest.difference(element.timestamp).inHours >= 24,
-    );
-
-    _graphHistory.removeWhere(
-      (element) =>
-          newest.difference(element.timestamp).inHours >= 24,
-    );
+    _history.removeWhere((el) => newest.difference(el.timestamp).inHours >= 24);
+    _graphHistory.removeWhere((el) => newest.difference(el.timestamp).inHours >= 24);
   }
 
-  void _updateHourlyHistory(SensorReading reading) {
+  void updateHourlyHistory(SensorReading reading) {
     if (_graphHistory.isEmpty) {
       _graphHistory.add(reading);
       return;
     }
-
     final last = _graphHistory.last;
-
-    final sameHour =
-        last.timestamp.year == reading.timestamp.year &&
-        last.timestamp.month == reading.timestamp.month &&
-        last.timestamp.day == reading.timestamp.day &&
-        last.timestamp.hour == reading.timestamp.hour;
+    final sameHour = last.timestamp.year == reading.timestamp.year &&
+                    last.timestamp.month == reading.timestamp.month &&
+                    last.timestamp.day == reading.timestamp.day &&
+                    last.timestamp.hour == reading.timestamp.hour;
 
     if (sameHour) {
       _graphHistory[_graphHistory.length - 1] = reading;
     } else {
       _graphHistory.add(reading);
     }
-
     while (_graphHistory.length > 24) {
       _graphHistory.removeAt(0);
     }
   }
 
-  List<SensorReading> getSensorHistory(String sensorId) {
-    return List.unmodifiable(_graphHistory);
-  }
+  List<SensorReading> getSensorHistory(String sensorId) => List.unmodifiable(_graphHistory);
 
-  double sensorValue(
-    SensorReading reading,
-    String sensorId,
-  ) {
+  double sensorValue(SensorReading reading, String sensorId) {
     switch (sensorId) {
-      case "aqi":
-        return reading.aqi;
-
-      case "co":
-        return reading.coPPM;
-
-      case "co2":
-        return reading.co2PPM;
-
-      case "temp":
-        return reading.temperature;
-
-      case "hum":
-        return reading.humidity;
-
-      case "press":
-        return reading.pressure;
-
-      case "altit":
-        return reading.altitude;
-
-      default:
-        return 0;
+      case "aqi": return reading.aqi;
+      case "co": return reading.coPPM;
+      case "co2": return reading.co2PPM;
+      case "temp": return reading.temperature;
+      case "hum": return reading.humidity;
+      case "press": return reading.pressure;
+      case "altit": return reading.altitude;
+      default: return 0;
     }
   }
 }
 
 /* new SensorNotifier
-  class SensorNotifier extends ChangeNotifier {
-    final Map<String, String> _deviceNames = {};
-    String _activeDeviceId = "";
-
-    SensorNotifier() {
-      // Automatically load stored devices when the notifier is initialized
-      _loadSavedDevices();
-    }
-
-    // Getters to safely expose data
-    String get activeDeviceId => _activeDeviceId;
-    Map<String, String> get deviceNames => Map.unmodifiable(_deviceNames);
-    String get deviceName => _deviceNames[_activeDeviceId] ?? "Air Guard";
-    String get deviceID => _activeDeviceId;
-
-    SensorReading? current;
-    final List<SensorReading> _history = [];
-    final List<SensorReading> _graphHistory = [];
-
-    List<SensorReading> get graphHistory => List.unmodifiable(_graphHistory);
-
-    /// Async method to restore historical setups from local storage
-    Future<void> _loadSavedDevices() async {
-      final savedDevices = await StorageManager.getDevices();
-      _deviceNames.addAll(savedDevices);
-
-      final savedActiveId = await StorageManager.getActiveDeviceId();
-      if (savedActiveId != null && _deviceNames.containsKey(savedActiveId)) {
-        _activeDeviceId = savedActiveId;
-      } else if (_deviceNames.isNotEmpty) {
-        _activeDeviceId = _deviceNames.keys.first;
-      }
-      notifyListeners();
-    }
-
-    /// Switch active monitored device
-    Future<void> selectDevice(String id) async {
-      if (_deviceNames.containsKey(id)) {
-        _activeDeviceId = id;
-        await StorageManager.saveActiveDeviceId(id);
-        
-        // Clear history charts since we are looking at a different hardware unit now
-        clearHistory(); 
-        notifyListeners();
-      }
-    }
-
-    /// Changes a device's name and updates local storage
-    Future<void> updateDeviceName(String id, String newName) async {
-      if (newName.trim().isEmpty) return;
-      if (!_deviceNames.containsKey(id)) return;
-      if (_deviceNames[id] == newName) return;
-
-      _deviceNames[id] = newName;
-      await StorageManager.saveDevices(_deviceNames);
-      notifyListeners();
-    }
-
-    /// Processes cloud stream
-    void processHardwareData(String jsonString) async {
-      try {
-        final decoded = jsonDecode(jsonString);
-
-        // Extract the device ID that comes from the cloud payload
-        final String? incomingDeviceId = decoded['deviceID'];
-        if (incomingDeviceId == null || incomingDeviceId.isEmpty) return;
-
-        // 1. Check if this is a newly discovered device
-        if (!_deviceNames.containsKey(incomingDeviceId)) {
-          _deviceNames[incomingDeviceId] = "Air Guard"; // Default Name
-          await StorageManager.saveDevices(_deviceNames);
-          
-          // If no device was active yet, set this new one as active
-          if (_activeDeviceId.isEmpty) {
-            _activeDeviceId = incomingDeviceId;
-            await StorageManager.saveActiveDeviceId(incomingDeviceId);
-          }
-          notifyListeners();
-        }
-
-        // 2. Only record sensor history if the message matches the current active view screen
-        if (incomingDeviceId == _activeDeviceId) {
-          final reading = SensorReading.fromJson(decoded);
-
-          current = reading;
-          _history.add(reading);
-          _removeOldHistory(reading.timestamp);
-          _updateHourlyHistory(reading);
-
-          notifyListeners();
-        }
-      } catch (e) {
-        debugPrint("Sensor Parsing Error: $e");
-      }
-    }
-
-    void clearHistory() {
-      _history.clear();
-      _graphHistory.clear();
-      notifyListeners();
-    }
-
-    void _removeOldHistory(DateTime newest) {
-      _history.removeWhere((el) => newest.difference(el.timestamp).inHours >= 24);
-      _graphHistory.removeWhere((el) => newest.difference(el.timestamp).inHours >= 24);
-    }
-
-    void _updateHourlyHistory(SensorReading reading) {
-      if (_graphHistory.isEmpty) {
-        _graphHistory.add(reading);
-        return;
-      }
-      final last = _graphHistory.last;
-      final sameHour = last.timestamp.year == reading.timestamp.year &&
-                      last.timestamp.month == reading.timestamp.month &&
-                      last.timestamp.day == reading.timestamp.day &&
-                      last.timestamp.hour == reading.timestamp.hour;
-
-      if (sameHour) {
-        _graphHistory[_graphHistory.length - 1] = reading;
-      } else {
-        _graphHistory.add(reading);
-      }
-      while (_graphHistory.length > 24) {
-        _graphHistory.removeAt(0);
-      }
-    }
-
-    List<SensorReading> getSensorHistory(String sensorId) => List.unmodifiable(_graphHistory);
-
-    double sensorValue(SensorReading reading, String sensorId) {
-      switch (sensorId) {
-        case "aqi": return reading.aqi;
-        case "co": return reading.coPPM;
-        case "co2": return reading.co2PPM;
-        case "temp": return reading.temperature;
-        case "hum": return reading.humidity;
-        case "press": return reading.pressure;
-        case "altit": return reading.altitude;
-        default: return 0;
-      }
-    }
-  }
+  
 */

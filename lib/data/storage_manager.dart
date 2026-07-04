@@ -1,21 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-class StorageManager {
-  static Future<void> saveThemeMode(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('theme_mode', mode.index);
-  }
-
-  static Future<ThemeMode> getThemeMode() async {
-    final prefs = await  SharedPreferences.getInstance();
-    int index = prefs.getInt('theme_mode') ?? ThemeMode.system.index;
-    return ThemeMode.values[index];
-  }
-
-}
-
-/* new StorageManager
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,10 +19,8 @@ class StorageManager {
     return ThemeMode.values[index];
   }
 
-  // --- Devices Map Storage (ID -> Name) ---
   static Future<void> saveDevices(Map<String, String> devices) async {
     final prefs = await SharedPreferences.getInstance();
-    // Convert the Map to a JSON string before saving
     final jsonString = jsonEncode(devices);
     await prefs.setString(_devicesKey, jsonString);
   }
@@ -52,7 +32,6 @@ class StorageManager {
     
     try {
       final Map<String, dynamic> decoded = jsonDecode(jsonString);
-      // Cast the dynamic map back to a strictly typed Map<String, String>
       return decoded.map((key, value) => MapEntry(key, value.toString()));
     } catch (e) {
       debugPrint("Error parsing stored devices: $e");
@@ -60,7 +39,6 @@ class StorageManager {
     }
   }
 
-  // --- Active Device ID Storage ---
   static Future<void> saveActiveDeviceId(String id) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_activeDeviceKey, id);
@@ -71,4 +49,3 @@ class StorageManager {
     return prefs.getString(_activeDeviceKey);
   }
 }
-*/

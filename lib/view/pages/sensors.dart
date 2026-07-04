@@ -41,30 +41,30 @@ class SensorsState extends State<Sensors> {
     final currentReading = sensorProvider.current;
 
     return Scaffold(
+      backgroundColor: context.mainColors.primaryBg,
       extendBody: true,
-      appBar: _buildAppBar(context, sensorProvider),
+      appBar: buildAppBar(context, sensorProvider),
       body: ValueListenableBuilder<int>(
         valueListenable: selectedCardNotifier,
         builder: (context, selectedCard, _) {
           final selectedKey = allReading.keys.elementAt(selectedCard);
           
           return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 100),
+            physics: BouncingScrollPhysics(),
+            padding: EdgeInsets.only(bottom: 90),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(10),
               color: context.mainColors.primaryBg,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Horizontal Sensor List ---
                   SizedBox(
                     height: 100,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
+                      physics: BouncingScrollPhysics(),
                       itemCount: allReading.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      separatorBuilder: (_, _) => SizedBox(width: 10),
                       itemBuilder: (context, index) {
                         final key = allReading.keys.elementAt(index);
                         final data = allReading.values.elementAt(index);
@@ -87,15 +87,15 @@ class SensorsState extends State<Sensors> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   // --- AI Section ---
                   Container(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 10),
                     height: 100,
                     decoration: BoxDecoration(
                       color: context.mainColors.cardBg,
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       children: [
@@ -106,12 +106,12 @@ class SensorsState extends State<Sensors> {
                             Text("Powered by Gemini", style: TextStyle(color: context.mainColors.mutedText, fontSize: 10)),
                           ],
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
                               color: context.mainColors.secondaryBg,
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),
@@ -119,15 +119,15 @@ class SensorsState extends State<Sensors> {
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
 
                   // --- Graph Section ---
                   Container(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 10),
+                    padding: EdgeInsets.fromLTRB(10, 5, 10, 10),
                     height: 300,
                     decoration: BoxDecoration(
                       color: context.mainColors.cardBg,
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,12 +136,12 @@ class SensorsState extends State<Sensors> {
                           "${allReading[selectedKey]!.readingName} History",
                           style: TextStyle(color: context.mainColors.secondaryText, fontSize: 15),
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
                               color: context.mainColors.secondaryBg,
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: SensorGraph(
                               sensorId: selectedKey, 
@@ -152,18 +152,41 @@ class SensorsState extends State<Sensors> {
                       ],
                     ),
                   ),
+                  SizedBox(height: 10,),
+                  Container(
+                    height: 3000,
+                    width: double.infinity,
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: context.mainColors.cardBg,
+                      border: Border.all(
+                        color: context.mainColors.primaryBg
+                      ),
+                      borderRadius: BorderRadius.circular(20)
+                    ),
+                    child: Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: context.mainColors.secondaryBg,
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                      )
+                    ),
+                  )
                 ],
               ),
             ),
           );
         },
       ),
-      bottomNavigationBar: const CurvedBottomNavbar(),
+      bottomNavigationBar: CurvedBottomNavbar(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, SensorNotifier sensorProvider) {
+  PreferredSizeWidget buildAppBar(BuildContext context, SensorNotifier sensorProvider) {
     return AppBar(
+      backgroundColor: context.mainColors.primaryBg,
+      scrolledUnderElevation: 0,
       title: !isEdit
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -189,7 +212,7 @@ class SensorsState extends State<Sensors> {
                 ),
                 suffixIcon: IconButton(
                   onPressed: () {
-                    sensorProvider.updateDeviceName(controlledEditName.text);
+                    sensorProvider.updateDeviceName(sensorProvider.deviceID, controlledEditName.text);
                     setState(() => isEdit = false);
                   },
                   icon: Icon(FluentIcons.send_20_regular, color: context.mainColors.secondaryText),

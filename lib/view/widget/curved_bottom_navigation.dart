@@ -13,45 +13,57 @@ class CurvedBottomNavbar extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: selectedPageNotifier,
       builder: (context, selectedPage, _) {
-        return CurvedNavigationBar(
-          index: selectedPage,
-          backgroundColor: Colors.transparent, 
-          color: context.mainColors.cardBg,
-          buttonBackgroundColor: context.mainColors.infoBg,
-          animationDuration: const Duration(milliseconds: 300),
-          items: [
-            CurvedNavigationBarItem(
-              child: Icon(
-                selectedPage == 0 ? FluentIcons.device_eq_20_filled : FluentIcons.device_eq_20_regular,
-                color: selectedPage == 0 ? context.mainColors.infoText : context.mainColors.mutedText,
+        return Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: context.mainColors.primaryBg.withAlpha(80),
+                blurRadius: 15,
+                spreadRadius: 10,
+                offset: Offset(0, -5)
+              )
+            ],
+          ),
+          child: CurvedNavigationBar(
+            index: selectedPage,
+            backgroundColor: Colors.transparent, 
+            color: context.mainColors.cardBg,
+            buttonBackgroundColor: context.mainColors.infoBg,
+            animationDuration: const Duration(milliseconds: 300),
+            items: [
+              CurvedNavigationBarItem(
+                child: Icon(
+                  selectedPage == 0 ? FluentIcons.device_eq_20_filled : FluentIcons.device_eq_20_regular,
+                  color: selectedPage == 0 ? context.mainColors.infoText : context.mainColors.mutedText,
+                ),
+                label: "Sensor",
+                labelStyle: TextStyle(
+                  color: selectedPage == 0 ? context.mainColors.infoText : context.mainColors.mutedText
+                ),
               ),
-              label: "Sensor",
-              labelStyle: TextStyle(
-                color: selectedPage == 0 ? context.mainColors.infoText : context.mainColors.mutedText
+              CurvedNavigationBarItem(
+                child: Icon(
+                  selectedPage == 1 ? FluentIcons.home_20_filled : FluentIcons.home_20_regular,
+                  color: selectedPage == 1 ? context.mainColors.infoText : context.mainColors.mutedText,
+                ),
+                label: "Dashboard",
+                labelStyle: TextStyle(
+                  color: selectedPage == 1 ? context.mainColors.infoText : context.mainColors.mutedText
+                ),
               ),
-            ),
-            CurvedNavigationBarItem(
-              child: Icon(
-                selectedPage == 1 ? FluentIcons.home_20_filled : FluentIcons.home_20_regular,
-                color: selectedPage == 1 ? context.mainColors.infoText : context.mainColors.mutedText,
+              CurvedNavigationBarItem(
+                child: Icon(
+                  selectedPage == 2 ? FluentIcons.wifi_1_20_filled : FluentIcons.wifi_1_20_regular,
+                  color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText,
+                ),
+                label: "Devices",
+                labelStyle: TextStyle(
+                  color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText
+                ),
               ),
-              label: "Dashboard",
-              labelStyle: TextStyle(
-                color: selectedPage == 1 ? context.mainColors.infoText : context.mainColors.mutedText
-              ),
-            ),
-            CurvedNavigationBarItem(
-              child: Icon(
-                selectedPage == 2 ? FluentIcons.wifi_1_20_filled : FluentIcons.wifi_1_20_regular,
-                color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText,
-              ),
-              label: "Devices",
-              labelStyle: TextStyle(
-                color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText
-              ),
-            ),
-          ],
-          onTap: (index) => selectedPageNotifier.value = index,
+            ],
+            onTap: (index) => selectedPageNotifier.value = index,
+          ),
         );
       },
     );

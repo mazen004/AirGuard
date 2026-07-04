@@ -317,4 +317,3 @@ ThemeData darkScheme = ThemeData(
     ),
   ],
 );
-

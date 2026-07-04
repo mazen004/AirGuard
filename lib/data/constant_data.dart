@@ -29,6 +29,15 @@ class ThresholdValue {
   });
 }
 
+class Device{
+  final String deviceName, deviceID;
+
+  Device({
+    required this.deviceID,
+    required this.deviceName,
+  });
+}
+
 class ReadingRegistry {
   static Map<String, ReadingData> getReadings(BuildContext context) {
     return {
@@ -125,4 +134,8 @@ class ReadingRegistry {
 //       ),
 //     };
 //   }
+// }
+
+// class DeviceNameID{
+//   // static Map<String, ReadingData> (BuildContext context);
 // }

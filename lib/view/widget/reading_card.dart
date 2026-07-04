@@ -22,6 +22,9 @@ class _ReadingCardState extends State<ReadingCard> {
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<SensorNotifierMQTT>(context);
+    final value = prov.isConnected.value
+    ? widget.readingData.toStringAsFixed(2)
+    : "---";
     return ValueListenableBuilder<int>(
       valueListenable: selectedCardNotifier,
       builder: (context, selectedId, child) {
@@ -34,33 +37,33 @@ class _ReadingCardState extends State<ReadingCard> {
             fixedSize: Size(150, 100),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
-              side: isSelected ? BorderSide(color:  widget.reading.borderColor, width: 2):BorderSide(color: Colors.transparent)
+              side: isSelected ? BorderSide(color:  widget.reading.borderColor, width: 2):BorderSide(color: context.mainColors.cardBg)
             ),
             padding: EdgeInsets.all(1),
           ),
           onPressed: () {
             selectedCardNotifier.value = widget.reading.id;
           },
-          child: Container(
-            padding: EdgeInsets.only(right: 5),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              spacing: 2.5,
-              children: [
-                Container(
-                  width: 8,
-                  height: 95,
-                  decoration: BoxDecoration(
-                    color: widget.reading.mainColor,
-                    borderRadius: BorderRadius.horizontal(left: Radius.elliptical(8, 16)),
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Container(
+                width: 8,
+                height: 95,
+                decoration: BoxDecoration(
+                  color: widget.reading.mainColor,
+                  borderRadius: BorderRadius.horizontal(left: Radius.elliptical(8, 16)),
                 ),
-                Expanded(
+              ),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(5),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 1,
                     children: [
                       Row(
-                        spacing: 2.5,
+                        spacing: 5,
                         children: [
                           Icon(widget.reading.icon, color: widget.reading.mainColor),
                           FittedBox(
@@ -76,17 +79,21 @@ class _ReadingCardState extends State<ReadingCard> {
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        spacing: 10,
                         children: [
-                          FittedBox(
+                          Expanded(
                             child: Text(
-                              prov.isConnected.value ? widget.readingData.toString() : "---",
+                              value,
+                              overflow: TextOverflow.fade,
+                              maxLines: 1,
+                              textAlign: TextAlign.end,
+                              softWrap: false,
                               style: TextStyle(
                                 color: context.mainColors.primaryText,
                                 fontSize: 20,
                               ),
                             ),
                           ),
+                          SizedBox(width: 5,),
                           Text(
                             widget.reading.readingUnit,
                             style: TextStyle(
@@ -96,11 +103,34 @@ class _ReadingCardState extends State<ReadingCard> {
                           ),
                         ],
                       ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: context.statusColors.safeBg,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: context.statusColors.safeText,
+                                width: 1,
+                              )
+                            ),
+                            child: Text(
+                              "Safe",
+                              style: TextStyle(
+                                color: context.statusColors.safeText,
+                                fontSize: 10,
+                              ),
+                            ),
+                          )
+                        ],
+                      )
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

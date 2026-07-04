@@ -43,7 +43,7 @@ class SensorGraph extends StatelessWidget {
     final minX = now.subtract(const Duration(hours: 23)).millisecondsSinceEpoch.toDouble();
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
+      padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
       height: 250,
       child: LineChart(
         LineChartData(
@@ -107,8 +107,7 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta,
-   dynamic context,) {
+  Widget bottomTitles(double value, TitleMeta meta, dynamic mainColor){
     if (value < meta.min || value > meta.max) return const SizedBox.shrink();
 
     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
@@ -127,7 +126,7 @@ class SensorGraph extends StatelessWidget {
                   DateFormat("HH:00").format(date),
                   style: TextStyle(
                     fontSize: 10,
-                    color: context.primaryText
+                    color: mainColor.secondaryText
                   )
                 )
               ),
@@ -139,7 +138,7 @@ class SensorGraph extends StatelessWidget {
                   DateFormat("dd/MM").format(date),
                   style: TextStyle(
                     fontSize: 9,
-                    color: context.primaryText
+                    color: mainColor.secondaryText
                   )
                 )
               ),

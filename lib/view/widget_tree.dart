@@ -3,7 +3,7 @@ import 'package:air_guard/data/constant.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/pages/sensors.dart';
 import 'package:air_guard/view/pages/dashboard.dart';
-import 'package:air_guard/view/pages/connected_device.dart';
+import 'package:air_guard/view/pages/device.dart';
 
 class WidgetTree extends StatefulWidget {
   const WidgetTree({super.key});
