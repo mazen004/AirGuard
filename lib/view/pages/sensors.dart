@@ -152,27 +152,6 @@ class SensorsState extends State<Sensors> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 10,),
-                  Container(
-                    height: 3000,
-                    width: double.infinity,
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: context.mainColors.cardBg,
-                      border: Border.all(
-                        color: context.mainColors.primaryBg
-                      ),
-                      borderRadius: BorderRadius.circular(20)
-                    ),
-                    child: Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: context.mainColors.secondaryBg,
-                          borderRadius: BorderRadius.circular(10)
-                        ),
-                      )
-                    ),
-                  )
                 ],
               ),
             ),
