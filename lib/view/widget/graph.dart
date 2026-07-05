@@ -7,11 +7,15 @@ import 'package:air_guard/data/sensor_model.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:provider/provider.dart';
 
+String ?unit; 
 class SensorGraph extends StatelessWidget {
   final String sensorId;
   final List<SensorReading> readings;
 
   const SensorGraph({super.key, required this.sensorId, required this.readings});
+
+  static const int windowSlots = 24;
+  static const Duration slot = Duration(hours: 1);
 
   @override
   Widget build(BuildContext context) {
@@ -20,15 +24,16 @@ class SensorGraph extends StatelessWidget {
 
     if (!prov.isConnected.value || readings.isEmpty) {
       return SizedBox(
-        height: 250, 
+        height: 250,
         child: Center(
           child: Text(
             "Waiting for data...",
             style: TextStyle(
-              fontSize: 16, color: context.mainColors.mutedText
-            ),
-          )
-        )
+              fontSize: 16,
+              color: context.mainColors.mutedText
+            )
+          ),
+        ),
       );
     }
 
@@ -38,29 +43,54 @@ class SensorGraph extends StatelessWidget {
     final maxValue = values.reduce(math.max);
     final padding = (maxValue - minValue).abs() * 0.10 + 1;
 
-    final now = DateTime.now();
-    final maxX = now.millisecondsSinceEpoch.toDouble();
-    final minX = now.subtract(const Duration(hours: 23)).millisecondsSinceEpoch.toDouble();
+    final n = readings.length;
+    final firstTs = readings.first.timestamp;
+    final lastTs = readings.last.timestamp;
+
+    late DateTime windowStart;
+    late DateTime windowEnd;
+
+    if (n >= windowSlots) {
+      // Full window: slide with the latest reading
+      windowEnd = lastTs;
+      windowStart = lastTs.subtract(slot * (windowSlots));
+    } else {
+      // Growing phase: center existing points, empty slots split left/right
+      final emptySlots = windowSlots - n;
+      final leftEmpty = emptySlots ~/ 2;
+      windowStart = firstTs.subtract(slot * leftEmpty);
+      windowEnd = windowStart.add(slot * (windowSlots));
+    }
+
+    final windowStartMs = windowStart.millisecondsSinceEpoch.toDouble();
+    final windowEndMs = windowEnd.millisecondsSinceEpoch.toDouble();
+
+    // small buffer so edge points aren't bisected by the chart's clip boundary
+    final xMargin = (windowEndMs - windowStartMs) * 0.02;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 5, 20, 5),
+      padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
       height: 250,
       child: LineChart(
         LineChartData(
-          minX: minX, maxX: maxX,
+          minX: windowStartMs - xMargin,
+          maxX: windowEndMs + xMargin,
           minY: minValue - padding, maxY: maxValue + padding,
           clipData: const FlClipData.all(),
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
-          
+
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (List<LineBarSpot> touchedSpots) {
                 return touchedSpots.map((spot) {
                   final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                   return LineTooltipItem(
-                    "${DateFormat("HH:mm").format(date)}\n${spot.y.toStringAsFixed(2)}",
-                    TextStyle(color: sensorColor, fontSize: 12),
+                    "${DateFormat("HH:mm").format(date)}\n${spot.y.toStringAsFixed(2)} $unit",
+                    TextStyle(
+                      fontSize: 12,
+                      color: context.mainColors.primaryText,
+                    ),
                   );
                 }).toList();
               },
@@ -75,12 +105,12 @@ class SensorGraph extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                interval: 2 * 3600000, 
-                getTitlesWidget: (val, meta) => bottomTitles(val, meta, context.mainColors),
+                interval: slot.inMilliseconds * 1,
+                getTitlesWidget: (val, meta) => bottomTitles(val, meta, lastTs, context.mainColors),
               ),
             ),
           ),
-          
+
           lineBarsData: [
             LineChartBarData(
               barWidth: 3,
@@ -90,16 +120,13 @@ class SensorGraph extends StatelessWidget {
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (a, b, c, d) => FlDotCirclePainter(
-                  radius: 2, 
-                  color: sensorColor,
+                  radius: 2,
+                  color: context.mainColors.secondaryBg,
                   strokeColor: sensorColor,
-                  strokeWidth: 1,
-                )
+                  strokeWidth: 2,
+                ),
               ),
-              belowBarData: BarAreaData(
-                show: true,
-                color: sensorColor.withAlpha(50)
-              ),
+              belowBarData: BarAreaData(show: true, color: sensorColor.withAlpha(50)),
             ),
           ],
         ),
@@ -107,11 +134,13 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta, dynamic mainColor){
-    if (value < meta.min || value > meta.max) return const SizedBox.shrink();
+  Widget bottomTitles(double value, TitleMeta meta, DateTime lastReading, dynamic mainColor){
+    if (value <= meta.min || value >= meta.max) return const SizedBox.shrink();
 
     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    final isMidnight = date.hour == 0;
+    // if (date.hour.isOdd) return SizedBox.shrink();
+    if (date.isAfter(lastReading)) return SizedBox.shrink();
+    final isMidnight = date.hour <= 0;
 
     return SideTitleWidget(
       meta: meta,
@@ -126,19 +155,19 @@ class SensorGraph extends StatelessWidget {
                   DateFormat("HH:00").format(date),
                   style: TextStyle(
                     fontSize: 10,
-                    color: mainColor.secondaryText
+                    color: mainColor.mutedText
                   )
                 )
               ),
             if (isMidnight)
               Container(
                 color: Colors.transparent,
-                padding: const EdgeInsets.only(top: 3),
+                padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   DateFormat("dd/MM").format(date),
                   style: TextStyle(
                     fontSize: 9,
-                    color: mainColor.secondaryText
+                    color: mainColor.mutedText
                   )
                 )
               ),
@@ -148,17 +177,36 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  List<FlSpot> buildSpots() => readings.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), sensorValue(r))).toList();
+  List<FlSpot> buildSpots() {
+    return readings.map((r) => FlSpot(
+      r.timestamp.millisecondsSinceEpoch.toDouble(),
+      sensorValue(r)
+    )).toList();
+  }
 
   double sensorValue(SensorReading r) {
     switch (sensorId) {
-      case "aqi": return r.aqi;
-      case "co": return r.coPPM;
-      case "co2": return r.co2PPM;
-      case "temp": return r.temperature;
-      case "hum": return r.humidity;
-      case "press": return r.pressure;
-      case "altit": return r.altitude;
+      case "aqi": 
+        unit = "%";
+        return r.aqi;
+      case "co":
+        unit = "ppm";
+        return r.coPPM;
+      case "co2": 
+        unit = "ppm";
+        return r.co2PPM;
+      case "temp": 
+        unit = "°C";
+        return r.temperature;
+      case "hum": 
+        unit = "%";
+        return r.humidity;
+      case "press": 
+        unit = "hPa";
+        return r.pressure;
+      case "altit": 
+        unit = "m";
+        return r.altitude;
       default: return 0;
     }
   }

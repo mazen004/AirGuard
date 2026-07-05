@@ -109,7 +109,7 @@ class ReadingRegistry {
         readingName: 'Altitude',
         readingAbb: "Altitude",
         readingUnit: 'm',
-        icon: FluentIcons.ruler_20_regular
+        icon: Icons.landscape_rounded
       ),
     };
   }

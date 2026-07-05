@@ -72,13 +72,27 @@ class SensorsState extends State<Sensors> {
                         double readingValue = 0.0;
                         if (currentReading != null) {
                           switch (key) {
-                            case "aqi": readingValue = currentReading.aqi; break;
-                            case "co": readingValue = currentReading.coPPM; break;
-                            case "co2": readingValue = currentReading.co2PPM; break;
-                            case "temp": readingValue = currentReading.temperature; break;
-                            case "hum": readingValue = currentReading.humidity; break;
-                            case "press": readingValue = currentReading.pressure; break;
-                            case "altit": readingValue = currentReading.altitude; break;
+                            case "aqi":
+                              readingValue = currentReading.aqi;
+                              break;
+                            case "co":
+                              readingValue = currentReading.coPPM;
+                              break;
+                            case "co2":
+                              readingValue = currentReading.co2PPM;
+                              break;
+                            case "temp":
+                              readingValue = currentReading.temperature;
+                              break;
+                            case "hum":
+                              readingValue = currentReading.humidity;
+                              break;
+                            case "press":
+                              readingValue = currentReading.pressure;
+                              break;
+                            case "altit":
+                              readingValue = currentReading.altitude;
+                              break;
                           }
                         }
 

@@ -148,11 +148,12 @@ class SettingState extends State<Setting> {
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
+                                      key: UniqueKey(),
                                       behavior: SnackBarBehavior.floating,
                                       duration: const Duration(seconds: 2),
                                       backgroundColor: Colors.transparent,
                                       elevation: 0,
-                                      content: SnackBarAnimationStyleWrapper(text: "MQTT Disconnected",),
+                                      content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: "MQTT Disconnected",),
                                     ),
                                   );
 
@@ -173,11 +174,12 @@ class SettingState extends State<Setting> {
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
+                                    key: UniqueKey(),
                                     behavior: SnackBarBehavior.floating,
                                     duration: const Duration(seconds: 2),
                                     backgroundColor: Colors.transparent,
                                     elevation: 0,
-                                    content: SnackBarAnimationStyleWrapper(),
+                                    content: SnackBarAnimationStyleWrapper(key: UniqueKey()),
                                   ),
                                 );
                               },
