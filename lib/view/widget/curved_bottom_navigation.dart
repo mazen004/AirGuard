@@ -53,10 +53,10 @@ class CurvedBottomNavbar extends StatelessWidget {
               ),
               CurvedNavigationBarItem(
                 child: Icon(
-                  selectedPage == 2 ? FluentIcons.wifi_1_20_filled : FluentIcons.wifi_1_20_regular,
+                  selectedPage == 2 ? FluentIcons.person_20_filled : FluentIcons.person_20_regular,
                   color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText,
                 ),
-                label: "Devices",
+                label: "Me",
                 labelStyle: TextStyle(
                   color: selectedPage == 2 ? context.mainColors.infoText : context.mainColors.mutedText
                 ),

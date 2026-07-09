@@ -1,3 +1,4 @@
+import 'package:air_guard/view/widget/app_bar.dart';
 import 'package:flutter/material.dart';
 
 class Alart extends StatefulWidget {
@@ -10,8 +11,9 @@ class Alart extends StatefulWidget {
 class AlartState extends State<Alart> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-       child: null,
+    return Scaffold(
+      appBar: DefaultAppBar(),
+      body: null,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:air_guard/data/constant.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/pages/settings.dart';
+import 'package:air_guard/view/pages/alart.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +17,7 @@ class DefaultAppBar extends StatelessWidget implements PreferredSizeWidget { // 
         spacing: 8,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -51,6 +52,25 @@ class DefaultAppBar extends StatelessWidget implements PreferredSizeWidget { // 
               MaterialPageRoute(
                 builder: (_) => ChangeNotifierProvider.value(
                   value: sensorNotifier,
+                  child: const Alart(),
+                ),
+              ),
+            );
+          },
+          icon: Icon(
+            FluentIcons.alert_20_regular,
+            color: context.mainColors.secondaryText,
+          ),
+        ),
+        IconButton(
+          onPressed: () {
+            final sensorNotifier = Provider.of<SensorNotifierMQTT>(context, listen: false);
+            
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChangeNotifierProvider.value(
+                  value: sensorNotifier,
                   child: const Setting(),
                 ),
               ),
@@ -60,7 +80,7 @@ class DefaultAppBar extends StatelessWidget implements PreferredSizeWidget { // 
             FluentIcons.settings_20_regular,
             color: context.mainColors.secondaryText,
           ),
-        )
+        ),
       ],
     );
   }

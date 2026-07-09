@@ -7,14 +7,13 @@ import 'package:air_guard/data/sensor_model.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:provider/provider.dart';
 
-String ?unit; 
 class SensorGraph extends StatelessWidget {
   final String sensorId;
   final List<SensorReading> readings;
 
   const SensorGraph({super.key, required this.sensorId, required this.readings});
 
-  static const int windowSlots = 24;
+  static const int windowSlots = 23;
   static const Duration slot = Duration(hours: 1);
 
   @override
@@ -28,10 +27,7 @@ class SensorGraph extends StatelessWidget {
         child: Center(
           child: Text(
             "Waiting for data...",
-            style: TextStyle(
-              fontSize: 16,
-              color: context.mainColors.mutedText
-            )
+            style: TextStyle(fontSize: 16, color: context.mainColors.mutedText),
           ),
         ),
       );
@@ -44,28 +40,26 @@ class SensorGraph extends StatelessWidget {
     final padding = (maxValue - minValue).abs() * 0.10 + 1;
 
     final n = readings.length;
-    final firstTs = readings.first.timestamp;
-    final lastTs = readings.last.timestamp;
+    final firstTsRaw = readings.first.timestamp;
+    final lastTsRaw = readings.last.timestamp;
+    final firstHour = DateTime(firstTsRaw.year, firstTsRaw.month, firstTsRaw.day, firstTsRaw.hour);
+    final lastHour = DateTime(lastTsRaw.year, lastTsRaw.month, lastTsRaw.day, lastTsRaw.hour);
 
     late DateTime windowStart;
     late DateTime windowEnd;
 
     if (n >= windowSlots) {
-      // Full window: slide with the latest reading
-      windowEnd = lastTs;
-      windowStart = lastTs.subtract(slot * (windowSlots));
+      windowEnd = lastHour;
+      windowStart = lastHour.subtract(slot * (windowSlots - 1));
     } else {
-      // Growing phase: center existing points, empty slots split left/right
       final emptySlots = windowSlots - n;
       final leftEmpty = emptySlots ~/ 2;
-      windowStart = firstTs.subtract(slot * leftEmpty);
-      windowEnd = windowStart.add(slot * (windowSlots));
+      windowStart = firstHour.subtract(slot * leftEmpty);
+      windowEnd = windowStart.add(slot * (windowSlots - 1));
     }
 
     final windowStartMs = windowStart.millisecondsSinceEpoch.toDouble();
     final windowEndMs = windowEnd.millisecondsSinceEpoch.toDouble();
-
-    // small buffer so edge points aren't bisected by the chart's clip boundary
     final xMargin = (windowEndMs - windowStartMs) * 0.02;
 
     return Container(
@@ -75,7 +69,8 @@ class SensorGraph extends StatelessWidget {
         LineChartData(
           minX: windowStartMs - xMargin,
           maxX: windowEndMs + xMargin,
-          minY: minValue - padding, maxY: maxValue + padding,
+          minY: minValue - padding,
+          maxY: maxValue + padding,
           clipData: const FlClipData.all(),
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
@@ -84,9 +79,26 @@ class SensorGraph extends StatelessWidget {
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (List<LineBarSpot> touchedSpots) {
                 return touchedSpots.map((spot) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                  final reading = readings[spot.spotIndex];
+                  final hourStart = DateTime(
+                    reading.timestamp.year,
+                    reading.timestamp.month,
+                    reading.timestamp.day,
+                    reading.timestamp.hour,
+                  );
+                  final now = DateTime.now();
+                  final isCurrentHour = hourStart.year == now.year &&
+                      hourStart.month == now.month &&
+                      hourStart.day == now.day &&
+                      hourStart.hour == now.hour;
+
+                  final startLabel = DateFormat("HH:00").format(hourStart);
+                  final endLabel = isCurrentHour
+                      ? DateFormat("HH:mm").format(reading.timestamp)
+                      : "${hourStart.hour.toString().padLeft(2, '0')}:59";
+
                   return LineTooltipItem(
-                    "${DateFormat("HH:mm").format(date)}\n${spot.y.toStringAsFixed(2)} $unit",
+                    "$startLabel --> $endLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorId)}",
                     TextStyle(
                       fontSize: 12,
                       color: context.mainColors.primaryText,
@@ -105,8 +117,9 @@ class SensorGraph extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                interval: slot.inMilliseconds * 1,
-                getTitlesWidget: (val, meta) => bottomTitles(val, meta, lastTs, context.mainColors),
+                interval: slot.inMilliseconds * 1, // evaluate every hour, filter in the builder below
+                getTitlesWidget: (val, meta) =>
+                    bottomTitles(val, meta, firstHour, lastTsRaw, context.mainColors),
               ),
             ),
           ),
@@ -134,13 +147,21 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta, DateTime lastReading, dynamic mainColor){
-    if (value <= meta.min || value >= meta.max) return const SizedBox.shrink();
+  Widget bottomTitles(double value, TitleMeta meta,  DateTime firstReading, DateTime lastReading, dynamic mainColor) {
+    if (value <= meta.min || value >= meta.max) {
+      return SizedBox.shrink();
+    }
 
     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    // if (date.hour.isOdd) return SizedBox.shrink();
-    if (date.isAfter(lastReading)) return SizedBox.shrink();
-    final isMidnight = date.hour <= 0;
+    if (date.isAfter(lastReading)) {
+      return SizedBox.shrink();
+    }
+
+    if (date.hour % 2 != 0) {
+      return SizedBox.shrink();
+    }
+
+    final isMidnight = date.hour == 0;
 
     return SideTitleWidget(
       meta: meta,
@@ -150,26 +171,23 @@ class SensorGraph extends StatelessWidget {
         child: Column(
           children: [
             Transform.rotate(
-              angle: -math.pi/4,
+              angle: -math.pi / 4,
               child: Text(
-                  DateFormat("HH:00").format(date),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: mainColor.mutedText
-                  )
-                )
+                DateFormat("HH:00").format(date),
+                style: TextStyle(fontSize: 10, color: mainColor.mutedText),
               ),
+            ),
             if (isMidnight)
               Container(
                 color: Colors.transparent,
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  DateFormat("dd/MM").format(date),
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: mainColor.mutedText
-                  )
-                )
+                child: Transform.rotate(
+                  angle: -math.pi / 4,
+                  child: Text(
+                    DateFormat("dd/MM").format(date),
+                    style: TextStyle(fontSize: 9, color: mainColor.mutedText),
+                  ),
+                ),
               ),
           ],
         ),
@@ -178,36 +196,35 @@ class SensorGraph extends StatelessWidget {
   }
 
   List<FlSpot> buildSpots() {
-    return readings.map((r) => FlSpot(
-      r.timestamp.millisecondsSinceEpoch.toDouble(),
-      sensorValue(r)
-    )).toList();
+    return readings.map((r) {
+      final hourStart = DateTime(r.timestamp.year, r.timestamp.month, r.timestamp.day, r.timestamp.hour);
+      return FlSpot(hourStart.millisecondsSinceEpoch.toDouble(), sensorValue(r));
+    }).toList();
   }
 
   double sensorValue(SensorReading r) {
     switch (sensorId) {
-      case "aqi": 
-        unit = "%";
-        return r.aqi;
-      case "co":
-        unit = "ppm";
-        return r.coPPM;
-      case "co2": 
-        unit = "ppm";
-        return r.co2PPM;
-      case "temp": 
-        unit = "°C";
-        return r.temperature;
-      case "hum": 
-        unit = "%";
-        return r.humidity;
-      case "press": 
-        unit = "hPa";
-        return r.pressure;
-      case "altit": 
-        unit = "m";
-        return r.altitude;
+      case "aqi": return r.aqi;
+      case "co": return r.coPPM;
+      case "co2": return r.co2PPM;
+      case "temp": return r.temperature;
+      case "hum": return r.humidity;
+      case "press": return r.pressure;
+      case "altit": return r.altitude;
       default: return 0;
+    }
+  }
+
+  String getUnit(String id) {
+    switch (id) {
+      case "aqi": return "%";
+      case "co": return "ppm";
+      case "co2": return "ppm";
+      case "temp": return "°C";
+      case "hum": return "%";
+      case "press": return "hPa";
+      case "altit": return "m";
+      default: return "";
     }
   }
 

@@ -47,7 +47,7 @@ class SensorReading {
       pressure: d(env["pressure"]),
       altitude: d(env["altitude"]),
 
-      timestamp: DateTime.parse(ts["iso"]),
+      timestamp: DateTime.parse(ts["iso"]).toLocal(),
     );
   }
 
