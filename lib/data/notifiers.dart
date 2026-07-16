@@ -5,9 +5,16 @@ import 'package:air_guard/data/sensor_model.dart';
 import 'package:air_guard/data/storage_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
 final ValueNotifier<int> selectedPageNotifier = ValueNotifier(1);
 final ValueNotifier<int> selectedCardNotifier = ValueNotifier(0);
+final ValueNotifier<int> selectedRefreashRateNotifier = ValueNotifier(30);
+final ValueNotifier<bool> isTimeFormat24hNotifier = ValueNotifier(true);
+final ValueNotifier<bool> isGraphTypeAverageNotifier = ValueNotifier(true);
+final ValueNotifier<String> selectedLanguageNotifier = ValueNotifier("en");
+final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
+
+String timeFormatHour = isTimeFormat24hNotifier.value ? "HH" : "hh";
+String timeFormat = isTimeFormat24hNotifier.value ? "" : " a";
 
 class SensorNotifierMQTT extends ChangeNotifier {
   final ValueNotifier<bool> isConnected = ValueNotifier(false);

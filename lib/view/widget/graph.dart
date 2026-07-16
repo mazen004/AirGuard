@@ -86,19 +86,19 @@ class SensorGraph extends StatelessWidget {
                     reading.timestamp.day,
                     reading.timestamp.hour,
                   );
-                  final now = DateTime.now();
-                  final isCurrentHour = hourStart.year == now.year &&
-                      hourStart.month == now.month &&
-                      hourStart.day == now.day &&
-                      hourStart.hour == now.hour;
+                  // final now = DateTime.now();
+                  // final isCurrentHour = hourStart.year == now.year &&
+                  //     hourStart.month == now.month &&
+                  //     hourStart.day == now.day &&
+                  //     hourStart.hour == now.hour;
 
-                  final startLabel = DateFormat("HH:00").format(hourStart);
-                  final endLabel = isCurrentHour
-                      ? DateFormat("HH:mm").format(reading.timestamp)
-                      : "${hourStart.hour.toString().padLeft(2, '0')}:59";
+                  final startLabel = DateFormat("$timeFormatHour:00$timeFormat").format(hourStart);
+                  // final endLabel = isCurrentHour
+                      // ? DateFormat("HH:mm").format(reading.timestamp)
+                      // : "${hourStart.hour.toString().padLeft(2, '0')}:59";
 
                   return LineTooltipItem(
-                    "$startLabel --> $endLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorId)}",
+                    "$startLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorId)}",
                     TextStyle(
                       fontSize: 12,
                       color: context.mainColors.primaryText,
@@ -169,18 +169,20 @@ class SensorGraph extends StatelessWidget {
       child: Container(
         color: Colors.transparent,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Transform.rotate(
+              alignment: Alignment.bottomCenter,
               angle: -math.pi / 4,
               child: Text(
-                DateFormat("HH:00").format(date),
+                DateFormat("$timeFormatHour:00$timeFormat").format(date),
                 style: TextStyle(fontSize: 10, color: mainColor.mutedText),
               ),
             ),
             if (isMidnight)
               Container(
                 color: Colors.transparent,
-                padding: const EdgeInsets.only(top: 4),
+                padding: EdgeInsets.only(top: isTimeFormat24hNotifier.value ? 2 : 10),
                 child: Transform.rotate(
                   angle: -math.pi / 4,
                   child: Text(

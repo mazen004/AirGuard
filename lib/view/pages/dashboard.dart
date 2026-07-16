@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import 'package:air_guard/data/constant.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/widget/app_bar.dart';
@@ -14,9 +14,15 @@ class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sensorProvider = context.watch<SensorNotifier>();
-    // final reading = sensorProvider.current!.timestamp; 
-    // final readingTime = DateFormat("HH:mm:ss").format(reading);
-    final readingTime = "HH:mm:ss";
+    final reading = sensorProvider.current?.timestamp; 
+    var readingTime = "";
+    if (reading != null){
+      readingTime = DateFormat("$timeFormatHour:mm:ss$timeFormat").format(reading);
+    }
+    else{
+      readingTime = "00:00:00";
+    }
+    // final readingTime = "HH:mm:ss";
 
     return Scaffold(
       backgroundColor: context.mainColors.primaryBg,
@@ -32,6 +38,7 @@ class Dashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 DeviceCard(id: sensorProvider.deviceID, name: sensorProvider.deviceName, readingsTime: readingTime,),
+                SizedBox(height: 10,),
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,

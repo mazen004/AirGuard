@@ -23,7 +23,9 @@ class DeviceCard extends StatelessWidget {
           
         )
       ),
-      onPressed: () {},
+      onPressed: () {
+        
+      },
       child: Row(
        mainAxisAlignment: MainAxisAlignment.spaceBetween,
        children: [

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:air_guard/data/constant.dart';
-import 'package:air_guard/data/storage_manager.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:air_guard/data/notifiers.dart';
-import 'package:air_guard/view/widget/snack_bar_style.dart';
 import 'package:provider/provider.dart';
+import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/notifiers.dart';
+import 'package:air_guard/data/storage_manager.dart';
+import 'package:country_flags_pro/country_flags_pro.dart';
+import 'package:air_guard/view/widget/snack_bar_style.dart';
+import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -20,6 +22,12 @@ class SettingState extends State<Setting> {
   TextEditingController? controlledPassword;
   TextEditingController? controlledTopic;
   bool isPasswordShowen = false;
+
+  List<ThemeMode> supportedThemaMode = [
+    ThemeMode.dark,
+    ThemeMode.system,
+    ThemeMode.light,
+  ];
 
   @override
   void dispose() {
@@ -40,6 +48,7 @@ class SettingState extends State<Setting> {
     controlledUsername ??= TextEditingController(text: prov.mqttUser);
     controlledPassword ??= TextEditingController(text: prov.mqttPass);
     controlledTopic ??= TextEditingController(text: prov.mqttTopic);
+    // final currentThemeMode = supportedThemaMode.indexOf(themeModeNotifier.value);
 
     return Scaffold(
       backgroundColor: context.mainColors.primaryBg,
@@ -53,7 +62,7 @@ class SettingState extends State<Setting> {
           },
           icon: Icon(FluentIcons.arrow_previous_20_regular)
         ),
-        title: const Text("Setting"),
+        title: const Text('Setting'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -62,43 +71,64 @@ class SettingState extends State<Setting> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Theme Mode:",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: context.mainColors.mutedText,
+            settingHeaderText('ThemMode'),
+            settingCard(
+              cardPadding: 8,
+              AnimatedToggleSwitch<ThemeMode>.size(
+                style: ToggleStyle(
+                  backgroundColor: context.mainColors.secondaryBg,
+                  indicatorColor: context.mainColors.activeBg,
+                  borderRadius: BorderRadius.circular(50),
+                  borderColor: context.mainColors.secondaryBg,
+                  indicatorBorderRadius: BorderRadius.zero
+                ),
+                current: themeModeNotifier.value,
+                values: [ThemeMode.dark, ThemeMode.system, ThemeMode.light],
+                iconOpacity: 1.0,
+                selectedIconScale: 1.0,
+                iconAnimationType: AnimationType.onHover,
+                styleAnimationType: AnimationType.onHover,
+                indicatorSize: Size.fromWidth(double.infinity/3),
+                height: 30,
+                animationCurve: Curves.easeInOutExpo,
+                spacing: 2.0,
+                customIconBuilder: (context, selectedThemeMode, global) {
+                  final text = ['Dark Mode', 'System Mode', 'Light Mode'][selectedThemeMode.index];
+                  final icon = [FluentIcons.weather_moon_20_regular, FluentIcons.desktop_20_regular, FluentIcons.weather_sunny_20_regular][selectedThemeMode.index];
+                  return  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        icon,
+                        color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
+                        size: 20,
+                      ),
+                      SizedBox(width: 5,),
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
+                          fontSize: 14
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                borderWidth: 0,
+                onChanged: (index) {
+                  setState(() => themeModeNotifier.value = index,);
+                  StorageManager.saveThemeMode(index); 
+                }
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(7.5),
-              decoration: BoxDecoration(
-                color: context.mainColors.cardBg,
-                borderRadius: BorderRadius.circular(22.5),
-              ),
-              child: Row(
-                  children: [
-                    themesButtom("Dark Mode", FluentIcons.weather_moon_20_regular, ThemeMode.dark, 0),
-                    themesButtom("System Mode", FluentIcons.desktop_20_regular, ThemeMode.system, 1),
-                    themesButtom("Light Mode", FluentIcons.weather_sunny_20_regular, ThemeMode.light, 2),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 15),
             ValueListenableBuilder<bool>(
               valueListenable: Provider.of<SensorNotifierMQTT>(context, listen: false).isConnected,
                 builder: (context, isConnected, child) {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Broker Connection:",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: context.mainColors.mutedText,
-                      ),
-                    ),
+                    settingHeaderText('Broker Connection:'),
                     Row(
                       spacing: 5,
                       children: [
@@ -107,7 +137,7 @@ class SettingState extends State<Setting> {
                           color: isConnected ? context.statusColors.connectText : context.statusColors.disconnectText,
                           ),
                         Text(
-                          isConnected ? "Connected" : "Disconnected",
+                          isConnected ? 'Connected' : 'Disconnected',
                           style: TextStyle(
                             color: isConnected ? context.statusColors.connectText : context.statusColors.disconnectText,
                           ),
@@ -119,20 +149,19 @@ class SettingState extends State<Setting> {
               }
             ),
             SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: context.mainColors.cardBg,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Column(
-                spacing: 12,
+            settingCard(
+              Column(
                 children: [
-                  brokerTextField("Broker URL", controlledURL!, FluentIcons.globe_20_regular),
-                  brokerTextField("Topic", controlledTopic!, FluentIcons.apps_list_detail_20_regular),
-                  brokerTextField("Port", controlledPort!, FluentIcons.connector_20_regular),
-                  brokerTextField("Username", controlledUsername!, FluentIcons.person_20_regular),
-                  brokerTextField("Password", controlledPassword!, FluentIcons.password_20_regular, isPassword: true),
+                  brokerTextField('Broker URL', controlledURL!, FluentIcons.globe_20_regular),
+                  SizedBox(height: 10,),
+                  brokerTextField('Topic', controlledTopic!, FluentIcons.apps_list_detail_20_regular),
+                  SizedBox(height: 10,),
+                  brokerTextField('Port', controlledPort!, FluentIcons.connector_20_regular),
+                  SizedBox(height: 10,),
+                  brokerTextField('Username', controlledUsername!, FluentIcons.person_20_regular),
+                  SizedBox(height: 10,),
+                  brokerTextField('Password', controlledPassword!, FluentIcons.password_20_regular, isPassword: true),
+                  SizedBox(height: 10,),
                   SizedBox(
                     height: 50,
                     width: double.infinity,
@@ -143,6 +172,7 @@ class SettingState extends State<Setting> {
                           onPressed: () async {
                                 if(isConnected){
                                   await prov.disconnect();
+                                  if(!context.mounted) return;
 
                                   ScaffoldMessenger.of(context).clearSnackBars();
 
@@ -153,7 +183,7 @@ class SettingState extends State<Setting> {
                                       duration: const Duration(seconds: 2),
                                       backgroundColor: Colors.transparent,
                                       elevation: 0,
-                                      content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: "MQTT Disconnected",),
+                                      content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'MQTT Disconnected',),
                                     ),
                                   );
 
@@ -184,7 +214,7 @@ class SettingState extends State<Setting> {
                                 );
                               },
                           icon: Icon(isConnected ? FluentIcons.plug_connected_20_regular : FluentIcons.plug_disconnected_20_regular),
-                          label: Text(isConnected ? "Connected" : "Connect"),
+                          label: Text(isConnected ? 'Connected' : 'Connect'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: isConnected ? context.statusColors.connectBg : context.mainColors.secondaryBg,
                             foregroundColor: isConnected ? context.statusColors.connectText : context.mainColors.primaryText,
@@ -200,75 +230,252 @@ class SettingState extends State<Setting> {
                 ],
               ),
             ),
-            SizedBox(height: 25),
-            Text(
-              "Genaral:",
-              style: TextStyle(
-                fontSize: 20,
-                color: context.mainColors.mutedText
+            SizedBox(height: 20),
+            settingHeaderText('Genaral'),
+            SizedBox(height: 10,),
+            settingCard(
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Language:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: context.mainColors.secondaryText,
+                        ),
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: selectedLanguageNotifier,
+                        builder: (context, selectedLanguage, _) {
+                          return SizedBox(
+                            width: 180,
+                            child: AnimatedToggleSwitch<String>.rolling(
+                              current: selectedLanguage,
+                              values: ['en', 'ar', 'de', 'fr'],
+                              style: ToggleStyle(
+                                backgroundColor: context.mainColors.secondaryBg,
+                                indicatorColor: context.mainColors.activeBg,
+                                borderColor: context.mainColors.secondaryBg,
+                              ),
+                              height: 40,
+                              indicatorSize: Size.fromWidth(40),
+                              styleAnimationType: AnimationType.onHover,
+                              indicatorAnimationType: AnimationType.onHover,
+                              animationCurve: Curves.easeInOutExpo,
+                              customIconBuilder: (context, selectedFlage, global) {
+                                final text = ['us', 'eg', 'de', 'fr'][selectedFlage.index];
+                                return Container(
+                                  padding: EdgeInsets.all(2.5),
+                                  child: CountryFlagsPro.getFlag(text,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                );
+                              },
+                              onChanged: (value) {
+                                selectedLanguageNotifier.value = value;
+                              },
+                            ),
+                          );
+                        }
+                      )
+                    ],
+                  ),
+                  SizedBox(height: 10,),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Refreash Rate: ',
+                        style: TextStyle(
+                          color: context.mainColors.secondaryText,
+                          fontSize: 16,
+                        ),
+                      ),
+                      ValueListenableBuilder<int>(
+                        valueListenable: selectedRefreashRateNotifier,
+                        builder: (context, refeshRate, _) {
+                          return SizedBox(
+                            width: 180,
+                            child: AnimatedToggleSwitch<int>.size(
+                              current: refeshRate,
+                              values: [15, 30, 60],
+                              style: ToggleStyle(
+                                backgroundColor: context.mainColors.secondaryBg,
+                                indicatorColor: context.mainColors.activeBg,
+                                borderColor: context.mainColors.secondaryBg,
+                                indicatorBorderRadius: BorderRadius.zero
+                              ),
+                              iconOpacity: 1.0,
+                              selectedIconScale: 1.0,
+                              indicatorSize: Size.fromWidth(60),
+                              iconAnimationType: AnimationType.onHover,
+                              styleAnimationType: AnimationType.onHover,
+                              animationCurve: Curves.easeInOutExpo,
+                              height: 40,
+                              spacing: 2.0,
+                              customIconBuilder: (context, selectedRefreshRate, global) {
+                                final text = [15, 30, 60][selectedRefreshRate.index];
+                                return  Center(
+                                  child: Text(
+                                    '${text}S',
+                                    style: TextStyle(
+                                      color: text == refeshRate ? context.mainColors.primaryText : context.mainColors.secondaryText,
+                                      fontSize: 14
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderWidth: 0,
+                              onChanged: (value) { 
+                                selectedRefreashRateNotifier.value = value;
+                              }
+                            ),
+                          );
+                        }
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10,),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Time Format:',
+                        style: TextStyle(
+                          color: context.mainColors.secondaryText,
+                          fontSize: 16,
+                        ),
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: isTimeFormat24hNotifier,
+                        builder: (context, timeFormat, _) {
+                          return SizedBox(
+                            width: 180,
+                            child: AnimatedToggleSwitch<bool>.size(
+                              current: timeFormat,
+                              values: [true, false],
+                              style: ToggleStyle(
+                                backgroundColor: context.mainColors.secondaryBg,
+                                indicatorColor: context.mainColors.activeBg,
+                                borderColor: context.mainColors.secondaryBg,
+                                indicatorBorderRadius: BorderRadius.zero
+                              ),
+                              iconOpacity: 1.0,
+                              selectedIconScale: 1.0,
+                              indicatorSize: Size.fromWidth(90),
+                              height: 40,
+                              iconAnimationType: AnimationType.onHover,
+                              styleAnimationType: AnimationType.onHover,
+                              animationCurve: Curves.easeInOutExpo,
+                              spacing: 2.0,
+                              customIconBuilder: (context, selectedTimeFormate, global) {
+                                final text = ['24hr', '12hr'][selectedTimeFormate.index];
+                                final is24hr = isTimeFormat24hNotifier.value ^ (text == '12hr');
+                                return  Center(
+                                  child: Text(
+                                    text,
+                                    style: TextStyle(
+                                      color: is24hr ? context.mainColors.primaryText : context.mainColors.secondaryText,
+                                      fontSize: 14
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderWidth: 0,
+                              onChanged: (value) async{ 
+                                isTimeFormat24hNotifier.value = value;
+                              }
+                            ),
+                          );
+                        }
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10,),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Graph Type:',
+                        style: TextStyle(
+                          color: context.mainColors.secondaryText,
+                          fontSize: 16,
+                        ),
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: isGraphTypeAverageNotifier,
+                        builder: (context, graphType, _) {
+                          return SizedBox(
+                            width: 180,
+                            child: AnimatedToggleSwitch<bool>.size(
+                              current: graphType, 
+                              values: [true, false],
+                              style: ToggleStyle(
+                                backgroundColor: context.mainColors.secondaryBg,
+                                indicatorColor: context.mainColors.activeBg,
+                                borderColor: context.mainColors.secondaryBg,
+                                indicatorBorderRadius: BorderRadius.zero
+                              ),
+                              height: 40,
+                              iconOpacity: 1.0,
+                              selectedIconScale: 1.0,
+                              iconAnimationType: AnimationType.onHover,
+                              styleAnimationType: AnimationType.onHover,
+                              animationCurve: Curves.easeInOutExpo,
+                              indicatorSize: Size.fromWidth(90),
+                              customIconBuilder: (context,selectedGraphType, global) {
+                                final text = ['Average', 'Live'][selectedGraphType.index];
+                                final condition = isGraphTypeAverageNotifier.value ^ (text == "Live");
+                                return Center(
+                                  child:  Text(text,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: condition ? context.mainColors.primaryText : context.mainColors.secondaryText,
+                                    ),
+                                  ),
+                                );
+                              },
+                              borderWidth: 0,
+                              onChanged: (value) {
+                                isGraphTypeAverageNotifier.value = value;
+                              },
+                            ),
+                          );
+                        }
+                      ),
+                    ],
+                  )
+                ],
               ),
             ),
-            Column(
-              children: [
-                SizedBox(height: 300,)
-              ],
-            )
           ],
         ),
       ),
     );
   }
 
-  Widget themesButtom(String text, IconData icon, ThemeMode themeMode, int location) {
-    return Expanded(
-      child: ValueListenableBuilder(
-        valueListenable: themeModeNotifier,
-        builder: (context, value, child) {
-          bool isActive = themeMode == themeModeNotifier.value;
-          return TextButton(
-            onPressed: () {
-              themeModeNotifier.value = themeMode;
-              StorageManager.saveThemeMode(themeMode);
-            },
-            style: ButtonStyle(
-              splashFactory: NoSplash.splashFactory,
-              overlayColor: WidgetStateProperty.all(Colors.transparent),
-              backgroundColor: WidgetStateProperty.all(
-                isActive ? context.mainColors.activeBg : context.mainColors.secondaryBg,
-              ),
-              padding: WidgetStateProperty.all<EdgeInsets>(
-                const EdgeInsets.symmetric(vertical: 12),
-              ),
-              shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.horizontal(
-                    left: location == 0 ? const Radius.circular(20) : Radius.zero,
-                    right: location == 2 ? const Radius.circular(20) : Radius.zero,
-                  ),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: isActive ? context.mainColors.primaryText : context.mainColors.secondaryText,
-                  size: 16,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  text,
-                  style: TextStyle(
-                    color: isActive ? context.mainColors.primaryText : context.mainColors.secondaryText,
-                    fontSize: 12,
-                  ),
-                )
-              ],
-            ),
-          );
-        },
+  Widget settingCard(Widget widget, {double cardPadding = 15}){
+    
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(cardPadding),
+      decoration: BoxDecoration(
+        color: context.mainColors.cardBg,
+        borderRadius: BorderRadius.circular(30),
       ),
+      child: widget,
+    );
+  }
+
+  Widget settingHeaderText(String text){
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
+        color: context.mainColors.mutedText
+      )
     );
   }
 
