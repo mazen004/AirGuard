@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -13,8 +14,8 @@ class SensorGraph extends StatelessWidget {
 
   const SensorGraph({super.key, required this.sensorId, required this.readings});
 
-  static const int windowSlots = 23;
-  static const Duration slot = Duration(hours: 1);
+  static int windowSlots = 24;
+  static Duration slot = Duration(hours: 1);
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +51,7 @@ class SensorGraph extends StatelessWidget {
 
     if (n >= windowSlots) {
       windowEnd = lastHour;
-      windowStart = lastHour.subtract(slot * (windowSlots - 1));
+      windowStart = lastHour.subtract(slot * (windowSlots));
     } else {
       final emptySlots = windowSlots - n;
       final leftEmpty = emptySlots ~/ 2;
@@ -71,8 +72,11 @@ class SensorGraph extends StatelessWidget {
           maxX: windowEndMs + xMargin,
           minY: minValue - padding,
           maxY: maxValue + padding,
-          clipData: const FlClipData.all(),
-          gridData: const FlGridData(show: false),
+          clipData: FlClipData.all(),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+          ),
           borderData: FlBorderData(show: false),
 
           lineTouchData: LineTouchData(
@@ -86,16 +90,8 @@ class SensorGraph extends StatelessWidget {
                     reading.timestamp.day,
                     reading.timestamp.hour,
                   );
-                  // final now = DateTime.now();
-                  // final isCurrentHour = hourStart.year == now.year &&
-                  //     hourStart.month == now.month &&
-                  //     hourStart.day == now.day &&
-                  //     hourStart.hour == now.hour;
 
                   final startLabel = DateFormat("$timeFormatHour:00$timeFormat").format(hourStart);
-                  // final endLabel = isCurrentHour
-                      // ? DateFormat("HH:mm").format(reading.timestamp)
-                      // : "${hourStart.hour.toString().padLeft(2, '0')}:59";
 
                   return LineTooltipItem(
                     "$startLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorId)}",
@@ -110,16 +106,16 @@ class SensorGraph extends StatelessWidget {
           ),
 
           titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                interval: slot.inMilliseconds * 1, // evaluate every hour, filter in the builder below
+                interval: slot.inMilliseconds * 1,
                 getTitlesWidget: (val, meta) =>
-                    bottomTitles(val, meta, firstHour, lastTsRaw, context.mainColors),
+                    bottomTitles(val, meta, lastTsRaw, context.mainColors),
               ),
             ),
           ),
@@ -129,7 +125,14 @@ class SensorGraph extends StatelessWidget {
               barWidth: 3,
               spots: spots,
               isCurved: true,
-              color: sensorColor,
+              gradient: LinearGradient(
+                begin: AlignmentGeometry.centerLeft,
+                end: AlignmentGeometry.centerRight,
+                colors: [
+                  sensorColor.withAlpha(85),
+                  sensorColor
+                ]
+              ),
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (a, b, c, d) => FlDotCirclePainter(
@@ -139,7 +142,17 @@ class SensorGraph extends StatelessWidget {
                   strokeWidth: 2,
                 ),
               ),
-              belowBarData: BarAreaData(show: true, color: sensorColor.withAlpha(50)),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: AlignmentGeometry.topCenter,
+                  end: AlignmentGeometry.bottomCenter,
+                  colors: [
+                    sensorColor.withAlpha(50),
+                    context.mainColors.secondaryBg,
+                  ]
+                ),
+              ),
             ),
           ],
         ),
@@ -147,52 +160,57 @@ class SensorGraph extends StatelessWidget {
     );
   }
 
-  Widget bottomTitles(double value, TitleMeta meta,  DateTime firstReading, DateTime lastReading, dynamic mainColor) {
+  Widget bottomTitles(double value, TitleMeta meta, DateTime currentReading, dynamic mainColor) {
     if (value <= meta.min || value >= meta.max) {
       return SizedBox.shrink();
     }
 
     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    if (date.isAfter(lastReading)) {
+    if (date.isAfter(currentReading)) {
       return SizedBox.shrink();
     }
 
-    if (date.hour % 2 != 0) {
-      return SizedBox.shrink();
+    if(currentReading.hour % 2 == 0) {
+      if (date.hour % 2 != 0) {
+        return SizedBox.shrink();
+      }
     }
+    else{
+      if(date.hour % 2 == 0){
+        return SizedBox.shrink();
+      }
+    }
+
+    // if (date.hour % 2 != 0) {
+    //   return SizedBox.shrink();
+    // }
+
+    final bool isCurrent = currentReading.hour == date.hour;
 
     final isMidnight = date.hour == 0;
 
     return SideTitleWidget(
       meta: meta,
-      space: 8,
-      child: Container(
-        color: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Transform.rotate(
-              alignment: Alignment.bottomCenter,
-              angle: -math.pi / 4,
-              child: Text(
-                DateFormat("$timeFormatHour:00$timeFormat").format(date),
-                style: TextStyle(fontSize: 10, color: mainColor.mutedText),
+      angle: -math.pi / 4,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            DateFormat("$timeFormatHour:00$timeFormat").format(date),
+            style: TextStyle(
+              fontSize: 10,
+              color: isCurrent ? mainColor.secondaryText : mainColor.mutedText
+            ),
+          ),
+          if (isMidnight)
+            Text(
+              DateFormat("dd/MM").format(date),
+              style: TextStyle(
+                fontSize: 9,
+                color: isCurrent ? mainColor.secondaryText : mainColor.mutedText
               ),
             ),
-            if (isMidnight)
-              Container(
-                color: Colors.transparent,
-                padding: EdgeInsets.only(top: isTimeFormat24hNotifier.value ? 2 : 10),
-                child: Transform.rotate(
-                  angle: -math.pi / 4,
-                  child: Text(
-                    DateFormat("dd/MM").format(date),
-                    style: TextStyle(fontSize: 9, color: mainColor.mutedText),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
