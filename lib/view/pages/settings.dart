@@ -52,9 +52,12 @@ class SettingState extends State<Setting> {
 
     return Scaffold(
       backgroundColor: context.mainColors.primaryBg,
+      extendBody: true,
+      
       appBar: AppBar(
         backgroundColor: context.mainColors.primaryBg,
         foregroundColor: context.mainColors.primaryText,
+        surfaceTintColor: context.mainColors.primaryBg,
         leading: IconButton(
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -71,16 +74,16 @@ class SettingState extends State<Setting> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            settingHeaderText('ThemMode'),
+            settingHeaderText('Theme Mode'),
             settingCard(
               cardPadding: 8,
               AnimatedToggleSwitch<ThemeMode>.size(
                 style: ToggleStyle(
                   backgroundColor: context.mainColors.secondaryBg,
                   indicatorColor: context.mainColors.activeBg,
-                  borderRadius: BorderRadius.circular(50),
+                  borderRadius: BorderRadius.circular(15),
                   borderColor: context.mainColors.secondaryBg,
-                  indicatorBorderRadius: BorderRadius.zero
+                  indicatorBorderRadius: BorderRadius.all(Radius.elliptical(15, 30))
                 ),
                 current: themeModeNotifier.value,
                 values: [ThemeMode.dark, ThemeMode.system, ThemeMode.light],
@@ -95,28 +98,34 @@ class SettingState extends State<Setting> {
                 customIconBuilder: (context, selectedThemeMode, global) {
                   final text = ['Dark Mode', 'System Mode', 'Light Mode'][selectedThemeMode.index];
                   final icon = [FluentIcons.weather_moon_20_regular, FluentIcons.desktop_20_regular, FluentIcons.weather_sunny_20_regular][selectedThemeMode.index];
-                  return  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        icon,
-                        color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
-                        size: 20,
+                  return  Padding(
+                    padding: EdgeInsetsGeometry.symmetric(vertical: 2.5, horizontal: 5),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            icon,
+                            color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
+                            size: 20,
+                          ),
+                          SizedBox(width: 5,),
+                          Text(
+                            text,
+                            style: TextStyle(
+                              color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 5,),
-                      Text(
-                        text,
-                        style: TextStyle(
-                          color: selectedThemeMode.index == supportedThemaMode.indexOf(themeModeNotifier.value) ? context.mainColors.primaryText :context.mainColors.secondaryText,
-                          fontSize: 14
-                        ),
-                      ),
-                    ],
+                    ),
                   );
                 },
                 borderWidth: 0,
                 onChanged: (index) {
-                  setState(() => themeModeNotifier.value = index,);
+                  themeModeNotifier.value = index;
                   StorageManager.saveThemeMode(index); 
                 }
               ),
@@ -277,6 +286,7 @@ class SettingState extends State<Setting> {
                               },
                               onChanged: (value) {
                                 selectedLanguageNotifier.value = value;
+                                StorageManager.saveLanguage(value);
                               },
                             ),
                           );
@@ -288,13 +298,13 @@ class SettingState extends State<Setting> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Refreash Rate: ',
+                      Text('Refresh Rate: ',
                         style: TextStyle(
                           color: context.mainColors.secondaryText,
                           fontSize: 16,
                         ),
                       ),
-                      ValueListenableBuilder<int>(
+                      ValueListenableBuilder(
                         valueListenable: selectedRefreashRateNotifier,
                         builder: (context, refeshRate, _) {
                           return SizedBox(
@@ -306,7 +316,7 @@ class SettingState extends State<Setting> {
                                 backgroundColor: context.mainColors.secondaryBg,
                                 indicatorColor: context.mainColors.activeBg,
                                 borderColor: context.mainColors.secondaryBg,
-                                indicatorBorderRadius: BorderRadius.zero
+                                indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
                               ),
                               iconOpacity: 1.0,
                               selectedIconScale: 1.0,
@@ -331,6 +341,7 @@ class SettingState extends State<Setting> {
                               borderWidth: 0,
                               onChanged: (value) { 
                                 selectedRefreashRateNotifier.value = value;
+                                StorageManager.saveRefreshRate(value);
                               }
                             ),
                           );
@@ -360,7 +371,7 @@ class SettingState extends State<Setting> {
                                 backgroundColor: context.mainColors.secondaryBg,
                                 indicatorColor: context.mainColors.activeBg,
                                 borderColor: context.mainColors.secondaryBg,
-                                indicatorBorderRadius: BorderRadius.zero
+                                indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
                               ),
                               iconOpacity: 1.0,
                               selectedIconScale: 1.0,
@@ -386,6 +397,7 @@ class SettingState extends State<Setting> {
                               borderWidth: 0,
                               onChanged: (value) async{ 
                                 isTimeFormat24hNotifier.value = value;
+                                StorageManager.saveTimeFormat(value);
                               }
                             ),
                           );
@@ -415,7 +427,7 @@ class SettingState extends State<Setting> {
                                 backgroundColor: context.mainColors.secondaryBg,
                                 indicatorColor: context.mainColors.activeBg,
                                 borderColor: context.mainColors.secondaryBg,
-                                indicatorBorderRadius: BorderRadius.zero
+                                indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
                               ),
                               height: 40,
                               iconOpacity: 1.0,
@@ -439,6 +451,7 @@ class SettingState extends State<Setting> {
                               borderWidth: 0,
                               onChanged: (value) {
                                 isGraphTypeAverageNotifier.value = value;
+                                StorageManager.saveGraphAverage(value);
                               },
                             ),
                           );

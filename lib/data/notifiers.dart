@@ -2,19 +2,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:air_guard/data/mqtt_server.dart';
 import 'package:air_guard/data/sensor_model.dart';
+import 'package:air_guard/data/constant_data.dart';
 import 'package:air_guard/data/storage_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final ValueNotifier<int> selectedPageNotifier = ValueNotifier(1);
-final ValueNotifier<int> selectedCardNotifier = ValueNotifier(0);
+final ValueNotifier<String> selectedCardNotifier = ValueNotifier('aqi');
 final ValueNotifier<int> selectedRefreashRateNotifier = ValueNotifier(30);
 final ValueNotifier<bool> isTimeFormat24hNotifier = ValueNotifier(true);
 final ValueNotifier<bool> isGraphTypeAverageNotifier = ValueNotifier(true);
 final ValueNotifier<String> selectedLanguageNotifier = ValueNotifier("en");
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
 
-String timeFormatHour = isTimeFormat24hNotifier.value ? "HH" : "hh";
-String timeFormat = isTimeFormat24hNotifier.value ? "" : " a";
+String get timeFormatHour => isTimeFormat24hNotifier.value ? "HH" : "hh";
+String get timeFormat => isTimeFormat24hNotifier.value ? "" : " a";
 
 class SensorNotifierMQTT extends ChangeNotifier {
   final ValueNotifier<bool> isConnected = ValueNotifier(false);
@@ -94,21 +95,22 @@ class SensorNotifierMQTT extends ChangeNotifier {
 }
 
 class SensorNotifier extends ChangeNotifier {
-  final Map<String, String> _deviceNames = {};
-  String _activeDeviceId = "";
+  final Map<String, Device> _deviceNames = {};
+  String _activeDeviceID = "";
 
   SensorNotifier() {
     loadSavedDevices();
   }
 
-  String get activeDeviceId => _activeDeviceId;
-  Map<String, String> get deviceNames => Map.unmodifiable(_deviceNames);
-  String get deviceName => _deviceNames[_activeDeviceId] ?? "Air Guard";
-  String get deviceID => _activeDeviceId;
+  String get activeDeviceID => _activeDeviceID;
+  Map<String, Device> get deviceNames => Map.unmodifiable(_deviceNames);
+  String get deviceName => _deviceNames[_activeDeviceID]?.deviceName ?? "Air Guard";
+  String get deviceID => _activeDeviceID;
 
   SensorReading? current;
   final List<SensorReading> _history = [];
   final List<SensorReading> _graphHistory = [];
+  // late SensorReading _emaValue;
 
   List<SensorReading> get graphHistory => List.unmodifiable(_graphHistory);
 
@@ -116,18 +118,18 @@ class SensorNotifier extends ChangeNotifier {
     final savedDevices = await StorageManager.getDevices();
     _deviceNames.addAll(savedDevices);
 
-    final savedActiveId = await StorageManager.getActiveDeviceId();
-    if (savedActiveId != null && _deviceNames.containsKey(savedActiveId)) {
-      _activeDeviceId = savedActiveId;
+    final savedActiveID = await StorageManager.getActiveDeviceId();
+    if (savedActiveID != null && _deviceNames.containsKey(savedActiveID)) {
+      _activeDeviceID = savedActiveID;
     } else if (_deviceNames.isNotEmpty) {
-      _activeDeviceId = _deviceNames.keys.first;
+      _activeDeviceID = _deviceNames.keys.first;
     }
     notifyListeners();
   }
 
   Future<void> selectDevice(String id) async {
     if (_deviceNames.containsKey(id)) {
-      _activeDeviceId = id;
+      _activeDeviceID = id;
       await StorageManager.saveActiveDeviceId(id);
       
       clearHistory(); 
@@ -138,14 +140,13 @@ class SensorNotifier extends ChangeNotifier {
   Future<void> updateDeviceName(String id, String newName) async {
     if (newName.trim().isEmpty) return;
     if (!_deviceNames.containsKey(id)) return;
-    if (_deviceNames[id] == newName) return;
+    if (_deviceNames[id]!.deviceName == newName) return;
 
-    _deviceNames[id] = newName;
+    _deviceNames[id]!.deviceName = newName;
     await StorageManager.saveDevices(_deviceNames);
     notifyListeners();
   }
 
-  /// Processes cloud stream
   void processHardwareData(String jsonString) async {
     try {
       final decoded = jsonDecode(jsonString);
@@ -154,23 +155,30 @@ class SensorNotifier extends ChangeNotifier {
       if (incomingDeviceId == null || incomingDeviceId.isEmpty) return;
 
       if (!_deviceNames.containsKey(incomingDeviceId)) {
-        _deviceNames[incomingDeviceId] = "Air Guard";
+        _deviceNames[incomingDeviceId] = Device(
+            deviceName: "Air Guard",
+            readingProvided: [],
+            lastReadingTime: DateTime.now(),
+            isOnline: false
+          );
         await StorageManager.saveDevices(_deviceNames);
         
-        if (_activeDeviceId.isEmpty) {
-          _activeDeviceId = incomingDeviceId;
+        if (_activeDeviceID.isEmpty) {
+          _activeDeviceID = incomingDeviceId;
           await StorageManager.saveActiveDeviceId(incomingDeviceId);
         }
         notifyListeners();
       }
 
-      if (incomingDeviceId == _activeDeviceId) {
+      if (incomingDeviceId == _activeDeviceID) {
         final reading = SensorReading.fromJson(decoded);
 
         current = reading;
         _history.add(reading);
         _removeOldHistory(reading.timestamp);
         updateHourlyHistory(reading);
+
+        
 
         notifyListeners();
       }
@@ -190,9 +198,10 @@ class SensorNotifier extends ChangeNotifier {
     _graphHistory.removeWhere((el) => newest.difference(el.timestamp).inHours >= 24);
   }
 
-  void updateHourlyHistory(SensorReading reading) {
+  void updateHourlyHistory(SensorReading reading) async{
     if (_graphHistory.isEmpty) {
       _graphHistory.add(reading);
+      // _emaValue = reading;
       return;
     }
     final last = _graphHistory.last;
@@ -200,6 +209,10 @@ class SensorNotifier extends ChangeNotifier {
                     last.timestamp.month == reading.timestamp.month &&
                     last.timestamp.day == reading.timestamp.day &&
                     last.timestamp.hour == reading.timestamp.hour;
+
+    _deviceNames[activeDeviceID]!.lastReadingTime = reading.timestamp;
+    _deviceNames[activeDeviceID]!.isOnline = true;
+    await StorageManager.updateDeviceLastReading(_activeDeviceID, reading.timestamp);
 
     if (sameHour) {
       _graphHistory[_graphHistory.length - 1] = reading;
@@ -220,13 +233,11 @@ class SensorNotifier extends ChangeNotifier {
       case "co2": return reading.co2PPM;
       case "temp": return reading.temperature;
       case "hum": return reading.humidity;
-      case "press": return reading.pressure;
       case "altit": return reading.altitude;
+      case "press": return reading.pressure;
       default: return 0;
     }
   }
 }
 
-/* new SensorNotifier
-  
-*/
+/**/

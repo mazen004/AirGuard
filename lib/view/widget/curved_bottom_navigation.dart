@@ -10,7 +10,7 @@ class CurvedBottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
+    return ValueListenableBuilder(
       valueListenable: selectedPageNotifier,
       builder: (context, selectedPage, _) {
         return Container(

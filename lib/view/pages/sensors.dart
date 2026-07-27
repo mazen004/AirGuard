@@ -35,7 +35,7 @@ class SensorsState extends State<Sensors> {
 
   @override
   Widget build(BuildContext context) {
-    final allReading = ReadingRegistry.getReadings(context);
+    final allReading = ReadingMeta.supportedReading(context);
     final sensorProvider = context.watch<SensorNotifier>();
     final graphReadings = sensorProvider.graphHistory;
     final currentReading = sensorProvider.current;
@@ -44,11 +44,9 @@ class SensorsState extends State<Sensors> {
       backgroundColor: context.mainColors.primaryBg,
       extendBody: true,
       appBar: buildAppBar(context, sensorProvider),
-      body: ValueListenableBuilder<int>(
+      body: ValueListenableBuilder(
         valueListenable: selectedCardNotifier,
         builder: (context, selectedCard, _) {
-          final selectedKey = allReading.keys.elementAt(selectedCard);
-          
           return SingleChildScrollView(
             physics: BouncingScrollPhysics(),
             padding: EdgeInsets.only(bottom: 90),
@@ -67,7 +65,6 @@ class SensorsState extends State<Sensors> {
                       separatorBuilder: (_, _) => SizedBox(width: 10),
                       itemBuilder: (context, index) {
                         final key = allReading.keys.elementAt(index);
-                        final data = allReading.values.elementAt(index);
                         
                         double readingValue = 0.0;
                         if (currentReading != null) {
@@ -96,7 +93,7 @@ class SensorsState extends State<Sensors> {
                           }
                         }
 
-                        return ReadingCard(reading: data, readingData: readingValue);
+                        return ReadingCard(readingID: key, reading: allReading[key]!, readingData: readingValue);
                       },
                     ),
                   ),
@@ -124,7 +121,15 @@ class SensorsState extends State<Sensors> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: context.mainColors.secondaryBg,
+                              gradient: LinearGradient(
+                                begin: AlignmentGeometry.topCenter,
+                                end: AlignmentGeometry.bottomCenter,
+                                colors: [
+                                  context.mainColors.cardBg,
+                                  context.mainColors.secondaryBg,
+                                  context.mainColors.secondaryBg,
+                                ],
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -134,8 +139,6 @@ class SensorsState extends State<Sensors> {
                   ),
 
                   SizedBox(height: 10),
-
-                  // --- Graph Section ---
                   Container(
                     padding: EdgeInsets.fromLTRB(10, 5, 10, 10),
                     height: 300,
@@ -147,18 +150,26 @@ class SensorsState extends State<Sensors> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${allReading[selectedKey]!.readingName} History",
+                          "${allReading[selectedCard]!.readingName} History",
                           style: TextStyle(color: context.mainColors.secondaryText, fontSize: 15),
                         ),
                         SizedBox(height: 5),
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: context.mainColors.secondaryBg,
+                              gradient: LinearGradient(
+                                begin: AlignmentGeometry.topCenter,
+                                end: AlignmentGeometry.bottomCenter,
+                                colors: [
+                                  context.mainColors.cardBg,
+                                  context.mainColors.secondaryBg,
+                                  context.mainColors.secondaryBg,
+                                ],
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: SensorGraph(
-                              sensorId: selectedKey, 
+                              sensorID: selectedCard, 
                               readings: graphReadings,
                             ),
                           ),
@@ -179,6 +190,8 @@ class SensorsState extends State<Sensors> {
   PreferredSizeWidget buildAppBar(BuildContext context, SensorNotifier sensorProvider) {
     return AppBar(
       backgroundColor: context.mainColors.primaryBg,
+      surfaceTintColor: context.mainColors.primaryBg,
+      foregroundColor: context.mainColors.primaryText,
       scrolledUnderElevation: 0,
       title: !isEdit
           ? Row(

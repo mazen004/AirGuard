@@ -7,9 +7,16 @@ import 'package:air_guard/data/storage_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  bool is24hr = await StorageManager.getTimeFormat();
+  String language = await StorageManager.getLanguage();
+  int refeshRate = await StorageManager.getRefreshRate();
   ThemeMode savedTheme = await StorageManager.getThemeMode();
+  bool isGraphAverage = await StorageManager.getGraphAverage();
   themeModeNotifier.value = savedTheme;
+  isTimeFormat24hNotifier.value = is24hr;
+  selectedLanguageNotifier.value = language;
+  selectedRefreashRateNotifier.value = refeshRate;
+  isGraphTypeAverageNotifier.value = isGraphAverage;
 
   runApp(
     MultiProvider(
@@ -37,7 +44,7 @@ class MyApp extends StatelessWidget {
         final currentTheme = mode == ThemeMode.dark ? darkScheme : lightScheme;
         return AnimatedTheme(
           duration: Duration(milliseconds: 1000),
-          curve: Curves.easeInOut,
+          curve: Curves.easeInOutExpo,
           data: currentTheme,
           child: MaterialApp(
             debugShowCheckedModeBanner: false,

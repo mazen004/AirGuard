@@ -13,6 +13,8 @@ class DefaultAppBar extends StatelessWidget implements PreferredSizeWidget { // 
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: context.mainColors.primaryBg,
+      foregroundColor: context.mainColors.primaryText,
+      surfaceTintColor: context.mainColors.primaryBg,
       title: Row(
         spacing: 8,
         children: [

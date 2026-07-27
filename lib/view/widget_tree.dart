@@ -23,13 +23,28 @@ class WidgetTreeState extends State<WidgetTree> {
       child: ValueListenableBuilder(
         valueListenable: selectedPageNotifier,
         builder: (context, pageIndex, _) {
-          return IndexedStack(
-             index: pageIndex,
-             children: [
-              Sensors(),
-              Dashboard(),
-              Me(),
-             ],
+          return ValueListenableBuilder(
+            valueListenable: isTimeFormat24hNotifier,
+            builder: (context, _, _) {
+              return ValueListenableBuilder(
+                valueListenable: selectedRefreashRateNotifier,
+                builder: (context, _, _) {
+                  return ValueListenableBuilder(
+                    valueListenable: selectedLanguageNotifier,
+                    builder: (context, _, _) {
+                      return IndexedStack(
+                         index: pageIndex,
+                         children: [
+                          Sensors(),
+                          Dashboard(),
+                          Me(),
+                         ],
+                      );
+                    }
+                  );
+                }
+              );
+            }
           );
         }
       ),
