@@ -8,8 +8,15 @@ import 'package:air_guard/view/widget/device_card.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:air_guard/view/widget/curved_bottom_navigation.dart';
 
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
+
+  @override
+  State<Dashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  String? selectDeviceCard;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +43,7 @@ class Dashboard extends StatelessWidget {
           children: [
             DeviceDashboardCard(
               deviceID: sensorProvider.activeDeviceID,
-              device: deviceData.values.elementAt(0),
+              device: deviceData[sensorProvider.activeDeviceID]!,
             ),
             SizedBox(height: 15,),
             Expanded(
@@ -45,9 +52,16 @@ class Dashboard extends StatelessWidget {
                 itemCount: deviceData.length,
                 separatorBuilder: (_, _) => SizedBox(height: 10),
                 itemBuilder: (context, index) {
+                  final key = deviceData.keys.elementAt(index);
                   return DeviceCard(
-                    deviceID: deviceData.keys.elementAt(index),
-                    device: deviceData.values.elementAt(index),
+                    deviceID: key,
+                    device: deviceData[key]!,
+                    isExpanded: selectDeviceCard == key,
+                    onToggle: () {
+                      setState(() {
+                        selectDeviceCard = selectDeviceCard == key ? null : key;
+                      });
+                    },
                   );
                 },
               ),

@@ -23,10 +23,21 @@ class ReadingCard extends StatefulWidget {
 class _ReadingCardState extends State<ReadingCard> {
   @override
   Widget build(BuildContext context) {
+    final sensorProvider = context.watch<SensorNotifier>();
+    final device = sensorProvider.deviceNames[sensorProvider.activeDeviceID];
+    final readingList = device!.readingProvided;
+
     final prov = Provider.of<SensorNotifierMQTT>(context);
     final value = prov.isConnected.value
-    ? widget.readingData.toStringAsFixed(2)
-    : "---";
+        ? widget.readingData.toStringAsFixed(2)
+        : "---";
+
+    // Safe unit lookup
+    final matched = readingList.cast<dynamic>().firstWhere(
+      (r) => r.reading == widget.readingID,   // ← change to the actual field name if different
+      orElse: () => null,
+    );
+    final unit = matched?.unit ?? "";
     return ValueListenableBuilder(
       valueListenable: selectedCardNotifier,
       builder: (context, selectedID, child) {
@@ -99,7 +110,7 @@ class _ReadingCardState extends State<ReadingCard> {
                             ),
                             SizedBox(width: 5,),
                             Text(
-                              widget.reading.readingUnit,
+                              unit,
                               style: TextStyle(
                                 color: context.mainColors.mutedText,
                                 fontSize: 15,

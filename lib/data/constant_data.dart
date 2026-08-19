@@ -3,92 +3,103 @@ import 'package:air_guard/data/constant.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
 class ReadingMeta{
-  // final int id;
   final IconData icon;
   final Color borderColor, layerColor, mainColor;
-  final String readingName, readingAbb, readingUnit;
+  final String readingName, readingAbb, readingDefaultUnit;
+  final List<String>? readingUnit;
 
   ReadingMeta({
-    // required this.id,
     required this.icon,
     required this.borderColor,
     required this.layerColor,
     required this.mainColor,
     required this.readingName,
     required this.readingAbb,
-    required this.readingUnit,
+    required this.readingDefaultUnit,
+    this.readingUnit,
   });
+  static List<ReadingUnit> defaultReadingProvided() {
+    const defaults = {
+      'aqi': '%',
+      'co': 'ppm',
+      'co2': 'ppm',
+      'temp': '°C',
+      'hum': '%',
+      'press': 'hPa',
+      'altit': 'm',
+    };
+    return defaults.entries
+        .map((e) => ReadingUnit(reading: e.key, unit: e.value))
+        .toList();
+  }
+
   static Map<String, ReadingMeta> supportedReading(BuildContext context) {
     return {
       'aqi': ReadingMeta(
-        // id: 0,
         borderColor: context.cardColors.aqiBorder,
         layerColor: context.cardColors.aqiGlow,
         mainColor: context.cardColors.aqiLeftSide,
         readingName: 'Air Quality Index',
         readingAbb: "AQI",
-        readingUnit: '%',
-        icon: FluentIcons.cloud_checkmark_20_regular
+        readingDefaultUnit: '%',
+        icon: FluentIcons.cloud_checkmark_20_regular,
       ),
       'co': ReadingMeta(
-        // id: 1,
         borderColor: context.cardColors.coBorder,
         layerColor: context.cardColors.coGlow,
         mainColor: context.cardColors.coLeftSide,
         readingName: 'Carbon Monoxide',
         readingAbb: "CO",
-        readingUnit: 'ppm',
-        icon: FluentIcons.cloud_off_20_regular
+        readingDefaultUnit: 'ppm',
+        icon: FluentIcons.cloud_off_20_regular,
       ),
       'co2': ReadingMeta(
-        // id: 2,
         borderColor: context.cardColors.co2Border,
         layerColor: context.cardColors.co2Glow,
         mainColor: context.cardColors.co2LeftSide,
         readingName: 'Carbon Dioxide',
         readingAbb: "CO₂",
-        readingUnit: 'ppm',
-        icon: FluentIcons.weather_squalls_20_regular
+        readingDefaultUnit: 'ppm',
+        icon: FluentIcons.weather_squalls_20_regular,
       ),
       'temp': ReadingMeta(
-        // id: 3,
         borderColor: context.cardColors.tempBorder,
         layerColor: context.cardColors.tempGlow,
         mainColor: context.cardColors.tempLeftSide,
         readingName: 'Temperature',
         readingAbb: "Temp",
-        readingUnit: '°C',
-        icon: FluentIcons.temperature_20_regular
+        readingDefaultUnit: '°C',
+        icon: FluentIcons.temperature_20_regular,
+        readingUnit: ['°C', '°F', 'K']
       ),
       'hum': ReadingMeta(
-        // id: 4,
         borderColor: context.cardColors.humBorder,
         layerColor: context.cardColors.humGlow,
         mainColor: context.cardColors.humLeftSide,
         readingName: 'Humidity',
         readingAbb: "Humidity",
-        readingUnit: '%',
-        icon: FluentIcons.drop_20_regular
+        readingDefaultUnit: '%',
+        icon: FluentIcons.drop_20_regular,
       ),
       'press': ReadingMeta(
-        // id: 5,
         borderColor: context.cardColors.pressBorder,
         layerColor: context.cardColors.pressGlow,
         mainColor: context.cardColors.pressLeftSide,
         readingName: 'Pressure',
         readingAbb: "Pressure",
-        readingUnit: 'hPa',
-        icon: Icons.compress_rounded
+        readingDefaultUnit: 'hPa',
+        icon: Icons.compress_rounded,
+        readingUnit: ['hPa', 'Pa', 'atm']
       ),
       'altit': ReadingMeta(
-        // id: 6,
         borderColor: context.cardColors.altiBorder,
         layerColor: context.cardColors.altiGlow,
         mainColor: context.cardColors.altiLeftSide,
         readingName: 'Altitude',
         readingAbb: "Altitude",
-        readingUnit: 'm',
-        icon: Icons.landscape_rounded
+        readingDefaultUnit: 'm',
+        icon: Icons.landscape_rounded,
+        readingUnit: ['m', 'Km']
       ),
     };
   }
@@ -120,24 +131,20 @@ class Threshold {
   }
 }
 
-class ReadingPerDevice {
-  int readingID;
+class ReadingUnit {
   String reading;
   String unit;
 
-  ReadingPerDevice({
-    required this.readingID,
+  ReadingUnit({
     required this.reading,
     required this.unit
   });
 
   Map<String, dynamic> toJson() => {
-    "readingID": readingID,
     "reading": reading,
     "unit": unit
   };
-  factory ReadingPerDevice.fromJson(Map<String, dynamic> json) => ReadingPerDevice(
-    readingID: json['readingID'],
+  factory ReadingUnit.fromJson(Map<String, dynamic> json) => ReadingUnit(
     reading: json['reading'],
     unit: json['unit']
   );
@@ -145,7 +152,7 @@ class ReadingPerDevice {
 
 class Device{
   String deviceName;
-  List<ReadingPerDevice> readingProvided;
+  List<ReadingUnit> readingProvided;
   DateTime lastReadingTime;
   bool isOnline;
 
@@ -165,9 +172,10 @@ class Device{
   factory Device.fromJson(Map<String, dynamic> json) => Device(
     deviceName: json['deviceName'],
     readingProvided: (json['readingProvided'] as List)
-        .map((r) => ReadingPerDevice.fromJson(r))
+        .map((r) => ReadingUnit.fromJson(r))
         .toList(),
     lastReadingTime: DateTime.parse(json['lastReadingTime']),
-    isOnline: json['isOnline'] ?? true,
+    isOnline: json['isOnline'] ?? Device.updateISOnline(DateTime.parse(json['lastReadingTime'])),
   );
+  static bool updateISOnline(DateTime time) => DateTime.now().difference(time).inSeconds > 90 ? false : true;
 }

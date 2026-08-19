@@ -1,9 +1,9 @@
 // import 'dart:math' as math;
 // import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import 'package:air_guard/data/constant.dart';
-// import 'package:air_guard/data/notifiers.dart';
+import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/data/constant_data.dart';
 // import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
@@ -15,7 +15,7 @@ class DeviceDashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final sensorProvider = context.watch<SensorNotifier>;
+    final sensorProvider = context.watch<SensorNotifier>();
     return SizedBox(
       width: double.infinity,
       child: TextButton(
@@ -34,7 +34,7 @@ class DeviceDashboardCard extends StatelessWidget {
           ),
         ),
         onPressed: () {
-          // sensorProvider.activeDeviceID = deviceID;
+          sensorProvider.selectDevice(deviceID);
         },
       
         child: Column(
@@ -47,7 +47,6 @@ class DeviceDashboardCard extends StatelessWidget {
                   child: Text(
                     device.deviceName,
                     style: TextStyle(
-                      // color: context.mainColors.primaryText,
                       fontSize: 17,
                       fontWeight: FontWeight.w400
                     ),

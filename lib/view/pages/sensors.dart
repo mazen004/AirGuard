@@ -5,7 +5,7 @@ import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/widget/graph.dart';
 import 'package:air_guard/data/constant_data.dart'; 
 import 'package:air_guard/view/widget/reading_card.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+// import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:air_guard/view/widget/curved_bottom_navigation.dart';
 
 class Sensors extends StatefulWidget {
@@ -43,7 +43,13 @@ class SensorsState extends State<Sensors> {
     return Scaffold(
       backgroundColor: context.mainColors.primaryBg,
       extendBody: true,
-      appBar: buildAppBar(context, sensorProvider),
+      appBar: AppBar(
+        backgroundColor: context.mainColors.primaryBg,
+        surfaceTintColor: context.mainColors.primaryBg,
+        foregroundColor: context.mainColors.primaryText,
+        scrolledUnderElevation: 0,
+        title: Text(sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
+      ),
       body: ValueListenableBuilder(
         valueListenable: selectedCardNotifier,
         builder: (context, selectedCard, _) {
@@ -61,10 +67,10 @@ class SensorsState extends State<Sensors> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       physics: BouncingScrollPhysics(),
-                      itemCount: allReading.length,
+                      itemCount: sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.readingProvided.length ?? 0 ,
                       separatorBuilder: (_, _) => SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        final key = allReading.keys.elementAt(index);
+                        final key = sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.readingProvided.elementAt(index).reading ?? "";
                         
                         double readingValue = 0.0;
                         if (currentReading != null) {
@@ -93,7 +99,11 @@ class SensorsState extends State<Sensors> {
                           }
                         }
 
-                        return ReadingCard(readingID: key, reading: allReading[key]!, readingData: readingValue);
+                        return ReadingCard(
+                          readingID: key,
+                          reading: allReading[key]!,
+                          readingData: readingValue,
+                        );
                       },
                     ),
                   ),
@@ -187,44 +197,46 @@ class SensorsState extends State<Sensors> {
     );
   }
 
-  PreferredSizeWidget buildAppBar(BuildContext context, SensorNotifier sensorProvider) {
-    return AppBar(
-      backgroundColor: context.mainColors.primaryBg,
-      surfaceTintColor: context.mainColors.primaryBg,
-      foregroundColor: context.mainColors.primaryText,
-      scrolledUnderElevation: 0,
-      title: !isEdit
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(sensorProvider.deviceName, style: TextStyle(color: context.mainColors.primaryText)),
-                IconButton(
-                  onPressed: () => setState(() {
-                    isEdit = true;
-                    controlledEditName.text = sensorProvider.deviceName;
-                  }),
-                  icon: Icon(FluentIcons.edit_16_regular, color: context.mainColors.mutedText),
-                ),
-              ],
-            )
-          : TextField(
-              controller: controlledEditName,
-              style: TextStyle(color: context.mainColors.primaryText),
-              decoration: InputDecoration(
-                labelText: "Device Name",
-                prefixIcon: IconButton(
-                  onPressed: () => setState(() => isEdit = false),
-                  icon: Icon(FluentIcons.text_edit_style_20_regular, color: context.mainColors.secondaryText),
-                ),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    sensorProvider.updateDeviceName(sensorProvider.deviceID, controlledEditName.text);
-                    setState(() => isEdit = false);
-                  },
-                  icon: Icon(FluentIcons.send_20_regular, color: context.mainColors.secondaryText),
-                ),
-              ),
-            ),
-    );
-  }
+  // PreferredSizeWidget buildAppBar(BuildContext context, SensorNotifier sensorProvider) {
+  //   return AppBar(
+  //     backgroundColor: context.mainColors.primaryBg,
+  //     surfaceTintColor: context.mainColors.primaryBg,
+  //     foregroundColor: context.mainColors.primaryText,
+  //     scrolledUnderElevation: 0,
+  //     title: Text(sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
+  //   );
+      // !isEdit
+      //     ? Row(
+      //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      //         children: [
+                  
+      //             IconButton(
+      //             onPressed: () => setState(() {
+      //               isEdit = true;
+      //               controlledEditName.text = sensorProvider.deviceName;
+      //             }),
+      //             icon: Icon(FluentIcons.edit_16_regular, color: context.mainColors.mutedText),
+      //           ),
+      //         ],
+      //       )
+      //     : TextField(
+      //         controller: controlledEditName,
+      //         style: TextStyle(color: context.mainColors.primaryText),
+      //         decoration: InputDecoration(
+      //           labelText: "Device Name",
+      //           prefixIcon: IconButton(
+      //             onPressed: () => setState(() => isEdit = false),
+      //             icon: Icon(FluentIcons.text_edit_style_20_regular, color: context.mainColors.secondaryText),
+      //           ),
+      //           suffixIcon: IconButton(
+      //             onPressed: () {
+      //               sensorProvider.updateDeviceName(sensorProvider.deviceID, controlledEditName.text);
+      //               setState(() => isEdit = false);
+      //             },
+      //             icon: Icon(FluentIcons.send_20_regular, color: context.mainColors.secondaryText),
+      //           ),
+      //         ),
+      //       ),
+    // );
+  // }
 }

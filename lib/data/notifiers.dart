@@ -128,6 +128,7 @@ class SensorNotifier extends ChangeNotifier {
   }
 
   Future<void> selectDevice(String id) async {
+    if (_deviceNames.isEmpty) return;
     if (_deviceNames.containsKey(id)) {
       _activeDeviceID = id;
       await StorageManager.saveActiveDeviceId(id);
@@ -147,6 +148,7 @@ class SensorNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+
   void processHardwareData(String jsonString) async {
     try {
       final decoded = jsonDecode(jsonString);
@@ -157,9 +159,9 @@ class SensorNotifier extends ChangeNotifier {
       if (!_deviceNames.containsKey(incomingDeviceId)) {
         _deviceNames[incomingDeviceId] = Device(
             deviceName: "Air Guard",
-            readingProvided: [],
-            lastReadingTime: DateTime.now(),
-            isOnline: false
+            readingProvided: ReadingMeta.defaultReadingProvided(),
+            lastReadingTime: SensorReading.fromJson(decoded).timestamp,
+            isOnline: _deviceNames[incomingDeviceId]?.isOnline ?? true,
           );
         await StorageManager.saveDevices(_deviceNames);
         
@@ -178,13 +180,20 @@ class SensorNotifier extends ChangeNotifier {
         _removeOldHistory(reading.timestamp);
         updateHourlyHistory(reading);
 
-        
+        _deviceNames[activeDeviceID]!.isOnline = Device.updateISOnline(reading.timestamp);
 
         notifyListeners();
       }
     } catch (e) {
       debugPrint("Sensor Parsing Error: $e");
     }
+  }
+
+  void deleteDevice(String id) async {
+    if ( _deviceNames.isEmpty || !_deviceNames.containsKey(id)) return;
+    _deviceNames.remove(id);
+    await StorageManager.saveDevices(_deviceNames);
+    notifyListeners();
   }
 
   void clearHistory() {
@@ -219,7 +228,7 @@ class SensorNotifier extends ChangeNotifier {
     } else {
       _graphHistory.add(reading);
     }
-    while (_graphHistory.length > 24) {
+    while (_graphHistory.length > 48) {
       _graphHistory.removeAt(0);
     }
   }

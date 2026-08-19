@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/rendering.dart';
+// import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -68,7 +68,7 @@ class _SensorGraphState extends State<SensorGraph> with SingleTickerProviderStat
     final sensorColor = getSensorColor(context.cardColors);
     final prov = Provider.of<SensorNotifierMQTT>(context);
     final readings = widget.readings;
-    final sensorId = widget.sensorID;
+    final sensorID = widget.sensorID;
 
     if (!prov.isConnected.value || readings.isEmpty) {
       return SizedBox(
@@ -82,7 +82,7 @@ class _SensorGraphState extends State<SensorGraph> with SingleTickerProviderStat
       );
     }
 
-    final spots = buildSpots(readings, sensorId);
+    final spots = buildSpots(readings, sensorID);
     final values = spots.map((e) => e.y).toList();
     final minValue = values.reduce(math.min);
     final maxValue = values.reduce(math.max);
@@ -154,7 +154,7 @@ class _SensorGraphState extends State<SensorGraph> with SingleTickerProviderStat
                       final startLabel = DateFormat("$timeFormatHour:00$timeFormat").format(hourStart);
 
                       return LineTooltipItem(
-                        "$startLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorId)}",
+                        "$startLabel\n${spot.y.toStringAsFixed(2)} ${getUnit(sensorID)}",
                         TextStyle(
                           fontSize: 12,
                           color: context.mainColors.primaryText,
@@ -298,15 +298,15 @@ class _SensorGraphState extends State<SensorGraph> with SingleTickerProviderStat
     );
   }
 
-  List<FlSpot> buildSpots(List<SensorReading> readings, String sensorId) {
+  List<FlSpot> buildSpots(List<SensorReading> readings, String sensorID) {
     return readings.map((r) {
       final hourStart = DateTime(r.timestamp.year, r.timestamp.month, r.timestamp.day, r.timestamp.hour);
-      return FlSpot(hourStart.millisecondsSinceEpoch.toDouble(), sensorValue(r, sensorId));
+      return FlSpot(hourStart.millisecondsSinceEpoch.toDouble(), sensorValue(r, sensorID));
     }).toList();
   }
 
-  double sensorValue(SensorReading r, String sensorId) {
-    switch (sensorId) {
+  double sensorValue(SensorReading r, String sensorID) {
+    switch (sensorID) {
       case "aqi": return r.aqi;
       case "co": return r.coPPM;
       case "co2": return r.co2PPM;

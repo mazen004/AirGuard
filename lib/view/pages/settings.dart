@@ -512,7 +512,10 @@ class SettingState extends State<Setting> {
                 ),
               )
             : null,
-        border: InputBorder.none,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: context.mainColors.mutedText)
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(color: context.mainColors.secondaryBg),
