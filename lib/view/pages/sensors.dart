@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/widget/graph.dart';
 import 'package:air_guard/data/constant_data.dart'; 
@@ -48,7 +48,7 @@ class SensorsState extends State<Sensors> {
         surfaceTintColor: context.mainColors.primaryBg,
         foregroundColor: context.mainColors.primaryText,
         scrolledUnderElevation: 0,
-        title: Text(sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
+        title: Text(sensorProvider.devices[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
       ),
       body: ValueListenableBuilder(
         valueListenable: selectedCardNotifier,
@@ -67,10 +67,10 @@ class SensorsState extends State<Sensors> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       physics: BouncingScrollPhysics(),
-                      itemCount: sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.readingProvided.length ?? 0 ,
+                      itemCount: sensorProvider.devices[sensorProvider.activeDeviceID]?.readingProvided.length ?? 0 ,
                       separatorBuilder: (_, _) => SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        final key = sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.readingProvided.elementAt(index).reading ?? "";
+                        final key = sensorProvider.devices[sensorProvider.activeDeviceID]?.readingProvided.elementAt(index).reading ?? "";
                         
                         double readingValue = 0.0;
                         if (currentReading != null) {
@@ -111,42 +111,42 @@ class SensorsState extends State<Sensors> {
                   SizedBox(height: 10),
 
                   // --- AI Section ---
-                  Container(
-                    padding: EdgeInsets.fromLTRB(10, 5, 10, 10),
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: context.mainColors.cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("AI Section", style: TextStyle(color: context.mainColors.secondaryText, fontSize: 15)),
-                            Text("Powered by Gemini", style: TextStyle(color: context.mainColors.mutedText, fontSize: 10)),
-                          ],
-                        ),
-                        SizedBox(height: 5),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: AlignmentGeometry.topCenter,
-                                end: AlignmentGeometry.bottomCenter,
-                                colors: [
-                                  context.mainColors.cardBg,
-                                  context.mainColors.secondaryBg,
-                                  context.mainColors.secondaryBg,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Container(
+                  //   padding: EdgeInsets.fromLTRB(10, 5, 10, 10),
+                  //   height: 100,
+                  //   decoration: BoxDecoration(
+                  //     color: context.mainColors.cardBg,
+                  //     borderRadius: BorderRadius.circular(20),
+                  //   ),
+                  //   child: Column(
+                  //     children: [
+                  //       Row(
+                  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //         children: [
+                  //           Text("AI Section", style: TextStyle(color: context.mainColors.secondaryText, fontSize: 15)),
+                  //           Text("Powered by Gemini", style: TextStyle(color: context.mainColors.mutedText, fontSize: 10)),
+                  //         ],
+                  //       ),
+                  //       SizedBox(height: 5),
+                  //       Expanded(
+                  //         child: Container(
+                  //           decoration: BoxDecoration(
+                  //             gradient: LinearGradient(
+                  //               begin: AlignmentGeometry.topCenter,
+                  //               end: AlignmentGeometry.bottomCenter,
+                  //               colors: [
+                  //                 context.mainColors.cardBg,
+                  //                 context.mainColors.secondaryBg,
+                  //                 context.mainColors.secondaryBg,
+                  //               ],
+                  //             ),
+                  //             borderRadius: BorderRadius.circular(10),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
 
                   SizedBox(height: 10),
                   Container(
@@ -203,7 +203,7 @@ class SensorsState extends State<Sensors> {
   //     surfaceTintColor: context.mainColors.primaryBg,
   //     foregroundColor: context.mainColors.primaryText,
   //     scrolledUnderElevation: 0,
-  //     title: Text(sensorProvider.deviceNames[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
+  //     title: Text(sensorProvider.devices[sensorProvider.activeDeviceID]?.deviceName ?? "Air Guard", style: TextStyle(color: context.mainColors.primaryText)),
   //   );
       // !isEdit
       //     ? Row(

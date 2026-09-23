@@ -1,11 +1,13 @@
-import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/notifiers.dart';
+// import 'package:air_guard/data/storage_manager.dart';
 import 'package:air_guard/data/constant_data.dart';
+import 'package:air_guard/view/widget/snack_bar_style.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 
 class DeviceCard extends StatefulWidget {
   final String deviceID;
@@ -27,7 +29,6 @@ class DeviceCard extends StatefulWidget {
 
 class _DeviceCardState extends State<DeviceCard> {
   final TextEditingController deviceNameController = TextEditingController();
-  // ValueNotifier<bool> isEditNotifer = ValueNotifier(false);
 
   bool isEdit = false;
   bool readingOpen = false;
@@ -42,6 +43,7 @@ class _DeviceCardState extends State<DeviceCard> {
   @override
   Widget build(BuildContext context) {
     final sensorProvider = context.watch<SensorNotifier>();
+    final brokerConnectionState = context.watch<SensorNotifierMQTT>().isConnected.value;
     deviceNameController.text = widget.device.deviceName;
       return TextButton(
         style: TextButton.styleFrom(
@@ -58,8 +60,48 @@ class _DeviceCardState extends State<DeviceCard> {
           )
         ),
         onPressed: isEdit ? null :() {
+          ScaffoldMessenger.of(context).clearSnackBars();
+            if(!brokerConnectionState){
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  key: UniqueKey(),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  margin: EdgeInsets.only(
+                    bottom: 10,
+                    left: 16,
+                    right: 16,
+                  ),
+                  content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'Connect to MQTT first', icon: FluentIcons.plug_disconnected_20_regular, bgColor: context.statusColors.dangerBg, textColor: context.statusColors.dangerText),
+                ),
+              );
+              return;
+            }
+
+            if(!widget.device.isOnline){
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  key: UniqueKey(),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  margin: EdgeInsets.only(
+                    bottom: 10,
+                    left: 16,
+                    right: 16,
+                  ),
+                  content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'Device is offline', icon: FluentIcons.plug_disconnected_20_regular, bgColor: context.statusColors.dangerBg, textColor: context.statusColors.dangerText),
+                ),
+              );
+              return;
+            }
             selectedPageNotifier.value = 0;
-            sensorProvider.selectDevice(widget.deviceID);
+            if(sensorProvider.activeDeviceID != widget.deviceID){
+              sensorProvider.selectDevice(widget.deviceID);
+            }
         },
         child: Column(
           children: [
@@ -109,7 +151,7 @@ class _DeviceCardState extends State<DeviceCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Last Online: ${DateTime.now().difference(widget.device.lastReadingTime).inSeconds <= selectedRefreashRateNotifier.value ? "now\n": DateFormat("$timeFormatHour:mm:ss$timeFormat\nE MMM dd").format(widget.device.lastReadingTime)}',
+                          'Last Online: ${DateTime.now().difference(widget.device.lastReadingTime).inSeconds <= widget.device.refreshRate ? 'now\n': DateFormat('$timeFormatHour:mm:ss$timeFormat\nE MMM dd').format(widget.device.lastReadingTime)}',
                           style: TextStyle(
                             fontSize: 12,
                             color: context.mainColors.secondaryText,
@@ -165,6 +207,7 @@ class _DeviceCardState extends State<DeviceCard> {
         ),
       );
   } 
+
   Widget expandeWidget(BuildContext context, SensorNotifier sensorProvider) {
     final allReading = ReadingMeta.supportedReading(context);
     final readings = widget.device.readingProvided;
@@ -174,22 +217,79 @@ class _DeviceCardState extends State<DeviceCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Device Name: ${widget.device.deviceName}',
-            style: TextStyle(
-              color: context.mainColors.primaryText,
-              fontWeight: FontWeight.w400,
-              fontSize: 15
-            ),
+          Row(
+            children: [
+              Text(
+                'Device Name:',
+                style: TextStyle(
+                  color: context.mainColors.primaryText,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15
+                ),
+              ),
+              SizedBox(width: 7.5,),
+              Text(
+                widget.device.deviceName,
+                style: TextStyle(
+                  color: context.mainColors.secondaryText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15
+                ),
+              ),
+
+            ],
           ),
           SizedBox(height: 10,),
+          Row(
+            children: [
+              Text(
+                'Graph Type:',
+                style: TextStyle(
+                  color: context.mainColors.primaryText,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15
+                ),
+              ),
+              SizedBox(width: 7.5,),
+              Text(
+                widget.device.isGraphAverage ? 'Average' : 'Live',
+                style: TextStyle(
+                  color: context.mainColors.secondaryText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10,),
+          Row(
+            children: [
+              Text(
+                'Refresh Rate:',
+                style: TextStyle(
+                  color: context.mainColors.primaryText,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15
+                ),
+              ),
+              SizedBox(width: 7.5,),
+              Text(
+                '${widget.device.refreshRate}S',
+                style: TextStyle(
+                  color: context.mainColors.secondaryText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15
+                ),
+              ),
+            ],
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Reading Provided:',
                 style: TextStyle(
-                  color: context.mainColors.primaryText,
+                  color: context.mainColors.mutedText,
                   fontWeight: FontWeight.w400,
                   fontSize: 15
                 ),
@@ -200,13 +300,12 @@ class _DeviceCardState extends State<DeviceCard> {
                     readingOpen = !readingOpen;
                   });
                 }, 
-                // iconSize: 15,
                 icon: AnimatedRotation(
                   duration: Duration(milliseconds: 250),
                   turns: readingOpen ? 0 : -0.25,
                   child: Icon(
                     FluentIcons.chevron_down_16_regular,
-                    color: context.mainColors.primaryText,
+                    color: context.mainColors.mutedText,
                     fontWeight: FontWeight.w400,
                   ),
                 )
@@ -391,7 +490,7 @@ class _DeviceCardState extends State<DeviceCard> {
                     Icon(FluentIcons.edit_20_regular),
                     SizedBox(width: 5,),
                     Text(
-                      "Edit",
+                      'Edit',
                       style: TextStyle(
                         fontWeight: FontWeight.w400
                       ),
@@ -418,10 +517,76 @@ class _DeviceCardState extends State<DeviceCard> {
             controller: deviceNameController,
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
-              labelText: "Device Name",
+              labelText: 'Device Name',
             ),
           ),
-          SizedBox(height: 10,),
+          SizedBox(height: 5,),
+          // ListView.separated(
+          //   itemCount: readings.length,
+          //   separatorBuilder: (_, _) => SizedBox(height: 10,),
+          //   itemBuilder: (context, index) {
+          //     final reading = readings[index];
+          //     final key = reading.reading;
+          //   final meta = allReading[key];
+          //   final readingUnit = meta!.readingUnit;
+          //   if (readingUnit == null || readingUnit.isEmpty) {
+          //     return const SizedBox.shrink();
+          //   }
+          //   final ReadingUnit unit = reading;
+          //     return Row(
+          //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //       children: [
+          //         Text(
+          //           '${meta.readingAbb}: ',
+          //           style: TextStyle(
+          //             color: context.mainColors.primaryText,
+          //             fontWeight: FontWeight.w400,
+          //             fontSize: 17,
+          //           ),
+          //         ),
+          //         SizedBox(
+          //           width: 180,
+          //           child: AnimatedToggleSwitch.size(
+          //             current: reading.unit, 
+          //             values: readingUnit.toList(),
+          //             style: ToggleStyle(
+          //               backgroundColor: context.mainColors.secondaryBg,
+          //               indicatorColor: context.mainColors.activeBg,
+          //               borderColor: context.mainColors.secondaryBg,
+          //               indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
+          //             ),
+          //             iconOpacity: 1.0,
+          //             selectedIconScale: 1.0,
+          //             indicatorSize: Size.fromWidth(180 / readingUnit.length),
+          //             iconAnimationType: AnimationType.onHover,
+          //             styleAnimationType: AnimationType.onHover,
+          //             animationCurve: Curves.easeInOutExpo,
+          //             height: 40,
+          //             spacing: 2.0,
+          //             customIconBuilder: (context, selectedUnit, global) {
+          //               final text = readingUnit.toList()[selectedUnit.index];
+          //               return  Center(
+          //                 child: Text(
+          //                   text,
+          //                   style: TextStyle(
+          //                     color: text == reading.unit  ? context.mainColors.primaryText : context.mainColors.secondaryText,
+          //                     fontSize: 14
+          //                   ),
+          //                 ),
+          //               );
+          //             },
+          //             borderWidth: 0,
+          //             onChanged: (value) { 
+          //               setState(() {
+          //                 unit.unit = value;
+          //               });
+          //             }
+          //           ),
+          //         )
+          //       ],
+          //     );
+          //   },
+          // ),
           ...readings.map((reading) {
             final key = reading.reading;
             final meta = allReading[key];
@@ -431,16 +596,16 @@ class _DeviceCardState extends State<DeviceCard> {
             }
             final ReadingUnit unit = reading;
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "${meta.readingAbb}: ",
+                    '${meta.readingName}: ',
                     style: TextStyle(
-                      color: context.mainColors.primaryText,
+                      fontSize: 16,
+                      color: context.mainColors.secondaryText,
                       fontWeight: FontWeight.w400,
-                      fontSize: 17,
                     ),
                   ),
                   SizedBox(
@@ -486,6 +651,110 @@ class _DeviceCardState extends State<DeviceCard> {
               ),
             );
           }),
+          SizedBox(height: 5,),
+          Row( // refreshRate
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Refresh Rate: ',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.mainColors.secondaryText,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(
+                  width: 180,
+                  child: AnimatedToggleSwitch.size(
+                    current: widget.device.refreshRate,
+                    values: [15, 30, 60],
+                    style: ToggleStyle(
+                      backgroundColor: context.mainColors.secondaryBg,
+                      indicatorColor: context.mainColors.activeBg,
+                      borderColor: context.mainColors.secondaryBg,
+                      indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
+                    ),
+                    iconOpacity: 1.0,
+                    selectedIconScale: 1.0,
+                    indicatorSize: Size.fromWidth(60),
+                    iconAnimationType: AnimationType.onHover,
+                    styleAnimationType: AnimationType.onHover,
+                    animationCurve: Curves.easeInOutExpo,
+                    height: 40,
+                    spacing: 2.0,
+                    customIconBuilder: (context, selectedRefreshRate, global) {
+                      final text = [15, 30, 60][selectedRefreshRate.index];
+                      return  Center(
+                        child: Text(
+                          '${text}S',
+                          style: TextStyle(
+                            color: text == widget.device.refreshRate ? context.mainColors.primaryText : context.mainColors.secondaryText,
+                            fontSize: 14
+                          ),
+                        ),
+                      );
+                    },
+                    borderWidth: 0,
+                    onChanged: (value) { 
+                      setState(() {
+                        widget.device.refreshRate = value;
+                      });
+                    }
+                  ),
+                )
+            ],
+          ),
+          SizedBox(height: 10,),
+          Row( // Graph Type
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Graph Type:',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.mainColors.secondaryText,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              SizedBox(
+                width: 180,
+                child: AnimatedToggleSwitch.size(
+                  current: widget.device.isGraphAverage, 
+                  values: [true, false],
+                  style: ToggleStyle(
+                    backgroundColor: context.mainColors.secondaryBg,
+                    indicatorColor: context.mainColors.activeBg,
+                    borderColor: context.mainColors.secondaryBg,
+                    indicatorBorderRadius: BorderRadius.all(Radius.elliptical(20, 40))
+                  ),
+                  height: 40,
+                  iconOpacity: 1.0,
+                  selectedIconScale: 1.0,
+                  iconAnimationType: AnimationType.onHover,
+                  styleAnimationType: AnimationType.onHover,
+                  animationCurve: Curves.easeInOutExpo,
+                  indicatorSize: Size.fromWidth(90),
+                  customIconBuilder: (context,selectedGraphType, global) {
+                    final text = ['Average', 'Live'][selectedGraphType.index];
+                    final condition = widget.device.isGraphAverage ^ (text == 'Live');
+                    return Center(
+                      child:  Text(text,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: condition ? context.mainColors.primaryText : context.mainColors.secondaryText,
+                        ),
+                      ),
+                    );
+                  },
+                  borderWidth: 0,
+                  onChanged: (value) {
+                    setState(() {
+                      widget.device.isGraphAverage = value;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+
           SizedBox(height: 10,),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -563,11 +832,12 @@ class _DeviceCardState extends State<DeviceCard> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.directional(topStart: Radius.circular(0), bottomStart: Radius.circular(0), topEnd: Radius.circular(20), bottomEnd: Radius.circular(20)))
                 ),
                 onPressed: () {
-                  sensorProvider.updateDeviceName(widget.deviceID, deviceNameController.text);
+                  widget.device.deviceName = deviceNameController.text;
+                  sensorProvider.updateDevice(widget.deviceID, widget.device);
                   setState(() {
                     isEdit = false;
                   });
-                  sensorProvider.deviceNames[widget.deviceID]!.readingProvided = newUnit;
+                  sensorProvider.devices[widget.deviceID]!.readingProvided = newUnit;
                 },
                 child: Row(
                   children: [

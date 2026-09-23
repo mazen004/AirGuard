@@ -21,41 +21,22 @@
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('language', lang);
     }
+    
+    static Future<String> getLanguage() async {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('language') ?? 'en';
+    }
 
     static Future<void> saveTimeFormat(bool timeFormat) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_24h', timeFormat);
     }
 
-    static Future<void> saveRefreshRate(int refreshRate) async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('refresh_rate', refreshRate);
-    }
-    static Future<void> saveGraphAverage(bool graphAverage) async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('graph_is_average', graphAverage);
-    }
-
-    static Future<String> getLanguage() async {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('language') ?? 'en';
-    }
-
     static Future<bool> getTimeFormat() async {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool('is_24h') ?? true;
     }
-
-    static Future<int> getRefreshRate() async {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getInt('refresh_rate') ?? 30;
-    }
-
-    static Future<bool> getGraphAverage() async {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool('graph_is_average') ?? true;
-    }
-
+    
     // Devices Section
     static Future<void> saveDevices(Map<String, Device> devices) async {
       final prefs = await SharedPreferences.getInstance();
@@ -105,4 +86,3 @@
       devices.removeWhere(((key, value) => key == deviceID));
     }
   }
-/**/

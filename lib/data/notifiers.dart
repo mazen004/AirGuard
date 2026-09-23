@@ -4,13 +4,11 @@ import 'package:air_guard/data/mqtt_server.dart';
 import 'package:air_guard/data/sensor_model.dart';
 import 'package:air_guard/data/constant_data.dart';
 import 'package:air_guard/data/storage_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 
 final ValueNotifier<int> selectedPageNotifier = ValueNotifier(1);
 final ValueNotifier<String> selectedCardNotifier = ValueNotifier('aqi');
-final ValueNotifier<int> selectedRefreashRateNotifier = ValueNotifier(30);
 final ValueNotifier<bool> isTimeFormat24hNotifier = ValueNotifier(true);
-final ValueNotifier<bool> isGraphTypeAverageNotifier = ValueNotifier(true);
 final ValueNotifier<String> selectedLanguageNotifier = ValueNotifier("en");
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
 
@@ -37,25 +35,25 @@ class SensorNotifierMQTT extends ChangeNotifier {
     isConnected.value = status;
   }
 
-  Future<void> saveAndConnect(
-    String url,
-    String port,
-    String user,
-    String pass,
-  ) async {
-    mqttUrl = url;
-    mqttPort = port;
-    mqttUser = user;
-    mqttPass = pass;
+  // Future<void> saveAndConnect(
+  //   String url,
+  //   String port,
+  //   String user,
+  //   String pass,
+  // ) async {
+  //   mqttUrl = url;
+  //   mqttPort = port;
+  //   mqttUser = user;
+  //   mqttPass = pass;
 
-    notifyListeners();
+  //   notifyListeners();
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("mqtt_url", url);
-    await prefs.setString("mqtt_port", port);
-    await prefs.setString("mqtt_user", user);
-    await prefs.setString("mqtt_pass", pass);
-  }
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.setString("mqtt_url", url);
+  //   await prefs.setString("mqtt_port", port);
+  //   await prefs.setString("mqtt_user", user);
+  //   await prefs.setString("mqtt_pass", pass);
+  // }
 
   Future<void> connect() async {
     mqttService = MqttService(
@@ -84,7 +82,7 @@ class SensorNotifierMQTT extends ChangeNotifier {
   Future<void> disconnect() async {
     try {
       mqttService.disconnect();
-      
+
       updateConnectionStatus(false);
       
       debugPrint("MQTT Disconnected successfully.");
@@ -95,7 +93,7 @@ class SensorNotifierMQTT extends ChangeNotifier {
 }
 
 class SensorNotifier extends ChangeNotifier {
-  final Map<String, Device> _deviceNames = {};
+  final Map<String, Device> _devices = {};
   String _activeDeviceID = "";
 
   SensorNotifier() {
@@ -103,8 +101,8 @@ class SensorNotifier extends ChangeNotifier {
   }
 
   String get activeDeviceID => _activeDeviceID;
-  Map<String, Device> get deviceNames => Map.unmodifiable(_deviceNames);
-  String get deviceName => _deviceNames[_activeDeviceID]?.deviceName ?? "Air Guard";
+  Map<String, Device> get devices => Map.unmodifiable(_devices);
+  String get deviceName => _devices[_activeDeviceID]?.deviceName ?? "Air Guard";
   String get deviceID => _activeDeviceID;
 
   SensorReading? current;
@@ -116,20 +114,20 @@ class SensorNotifier extends ChangeNotifier {
 
   Future<void> loadSavedDevices() async {
     final savedDevices = await StorageManager.getDevices();
-    _deviceNames.addAll(savedDevices);
+    _devices.addAll(savedDevices);
 
     final savedActiveID = await StorageManager.getActiveDeviceId();
-    if (savedActiveID != null && _deviceNames.containsKey(savedActiveID)) {
+    if (savedActiveID != null && _devices.containsKey(savedActiveID)) {
       _activeDeviceID = savedActiveID;
-    } else if (_deviceNames.isNotEmpty) {
-      _activeDeviceID = _deviceNames.keys.first;
+    } else if (_devices.isNotEmpty) {
+      _activeDeviceID = _devices.keys.first;
     }
     notifyListeners();
   }
 
   Future<void> selectDevice(String id) async {
-    if (_deviceNames.isEmpty) return;
-    if (_deviceNames.containsKey(id)) {
+    if (_devices.isEmpty) return;
+    if (_devices.containsKey(id)) {
       _activeDeviceID = id;
       await StorageManager.saveActiveDeviceId(id);
       
@@ -138,13 +136,12 @@ class SensorNotifier extends ChangeNotifier {
     }
   }
 
-  Future<void> updateDeviceName(String id, String newName) async {
-    if (newName.trim().isEmpty) return;
-    if (!_deviceNames.containsKey(id)) return;
-    if (_deviceNames[id]!.deviceName == newName) return;
-
-    _deviceNames[id]!.deviceName = newName;
-    await StorageManager.saveDevices(_deviceNames);
+  Future<void> updateDevice(String id, Device device) async {
+    if (_devices.isEmpty) return;
+    if (!_devices.containsKey(id)) return;
+    if (_devices[id] == device) return;
+    _devices[id] = device;
+    await StorageManager.saveDevices(_devices);
     notifyListeners();
   }
 
@@ -156,14 +153,16 @@ class SensorNotifier extends ChangeNotifier {
       final String? incomingDeviceId = decoded['deviceID'];
       if (incomingDeviceId == null || incomingDeviceId.isEmpty) return;
 
-      if (!_deviceNames.containsKey(incomingDeviceId)) {
-        _deviceNames[incomingDeviceId] = Device(
+      if (!_devices.containsKey(incomingDeviceId)) {
+        _devices[incomingDeviceId] = Device(
             deviceName: "Air Guard",
             readingProvided: ReadingMeta.defaultReadingProvided(),
             lastReadingTime: SensorReading.fromJson(decoded).timestamp,
-            isOnline: _deviceNames[incomingDeviceId]?.isOnline ?? true,
+            refreshRate: 15,
+            isOnline: _devices[incomingDeviceId]?.isOnline ?? false,
+            isGraphAverage: false,
           );
-        await StorageManager.saveDevices(_deviceNames);
+        await StorageManager.saveDevices(_devices);
         
         if (_activeDeviceID.isEmpty) {
           _activeDeviceID = incomingDeviceId;
@@ -180,7 +179,7 @@ class SensorNotifier extends ChangeNotifier {
         _removeOldHistory(reading.timestamp);
         updateHourlyHistory(reading);
 
-        _deviceNames[activeDeviceID]!.isOnline = Device.updateISOnline(reading.timestamp);
+        _devices[activeDeviceID]!.isOnline = Device.updateISOnline(reading.timestamp);
 
         notifyListeners();
       }
@@ -190,9 +189,9 @@ class SensorNotifier extends ChangeNotifier {
   }
 
   void deleteDevice(String id) async {
-    if ( _deviceNames.isEmpty || !_deviceNames.containsKey(id)) return;
-    _deviceNames.remove(id);
-    await StorageManager.saveDevices(_deviceNames);
+    if ( _devices.isEmpty || !_devices.containsKey(id)) return;
+    _devices.remove(id);
+    await StorageManager.removeDevice(id);
     notifyListeners();
   }
 
@@ -219,8 +218,8 @@ class SensorNotifier extends ChangeNotifier {
                     last.timestamp.day == reading.timestamp.day &&
                     last.timestamp.hour == reading.timestamp.hour;
 
-    _deviceNames[activeDeviceID]!.lastReadingTime = reading.timestamp;
-    _deviceNames[activeDeviceID]!.isOnline = true;
+    _devices[activeDeviceID]!.lastReadingTime = reading.timestamp;
+    _devices[activeDeviceID]!.isOnline = true;
     await StorageManager.updateDeviceLastReading(_activeDeviceID, reading.timestamp);
 
     if (sameHour) {

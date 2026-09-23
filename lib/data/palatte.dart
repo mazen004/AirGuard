@@ -185,6 +185,7 @@ class AirGuardColors {
   static Color pressGlow = Color.fromARGB(90, 139, 92, 246);
   static Color alti = Color(0xFF14B8A6);
   static Color altiGlow = Color.fromARGB(90, 20, 184, 166);
+  
   // STATUS COLORS Palette
   static Color safeTextDark = Color(0xFF22C55E);
   static Color safeTextLight = Color(0xFF15803D);
@@ -197,17 +198,17 @@ class AirGuardColors {
   static Color dangerTextDark = Color(0xFFEF4444);
   static Color dangerTextLight = Color(0xFFB91C1C);
   static Color dangerDark = Color(0xFFEF4444).withAlpha(38);
-  static Color dangerLight = Color(0xFFEF4444).withAlpha(30);
+  static Color dangerLight = Color(0xFFB91C1C).withAlpha(30);
 
   // CONNECT COLORS Palette
   static Color connectTextDark = Color(0xFF10B981);
   static Color connectTextLight = Color(0xFF047857);
   static Color connectDark = Color(0xFF10B981).withAlpha(38);
-  static Color connectLight = Color(0xFF10B981).withAlpha(30);
+  static Color connectLight = Color(0xFF047857).withAlpha(30);
   static Color disconnectTextDark = Color(0xFF94A3B8);
   static Color disconnectTextLight = Color(0xFF475569);
-  static Color disconnectDark = Color(0xFFEF4444).withAlpha(38);
-  static Color disconnectLight = Color(0xFFEF4444).withAlpha(30);
+  static Color disconnectDark = Color(0xFF94A3B8).withAlpha(38);
+  static Color disconnectLight = Color(0xFF475569).withAlpha(30);
 }
 
 ThemeData lightScheme = ThemeData(

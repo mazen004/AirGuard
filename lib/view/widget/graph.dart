@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/sensor_model.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:provider/provider.dart';
@@ -185,6 +185,7 @@ class _SensorGraphState extends State<SensorGraph> with SingleTickerProviderStat
                   barWidth: 3,
                   spots: visibleSpots,
                   isCurved: true,
+                  preventCurveOverShooting: true,
                   gradient: LinearGradient(
                     begin: AlignmentGeometry.centerLeft,
                     end: AlignmentGeometry.centerRight,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/widget/app_bar.dart';
-import 'package:air_guard/view/widget/device_dashboard_card.dart';
 import 'package:air_guard/view/widget/device_card.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:air_guard/view/widget/device_dashboard_card.dart';
+// import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:air_guard/view/widget/curved_bottom_navigation.dart';
 
 class Dashboard extends StatefulWidget {
@@ -21,7 +21,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     final sensorProvider = context.watch<SensorNotifier>();
-    final deviceData = sensorProvider.deviceNames;
+    final deviceData = sensorProvider.devices;
 
     return Scaffold(
       extendBody: true,
@@ -69,6 +69,7 @@ class _DashboardState extends State<Dashboard> {
           ],
         ),
       ),
+      /*
       floatingActionButton: FloatingActionButton(
         backgroundColor: context.mainColors.cardBg,
         foregroundColor: context.mainColors.primaryText,
@@ -94,6 +95,7 @@ class _DashboardState extends State<Dashboard> {
           ),
         )
       ),
+      */
       bottomNavigationBar: CurvedBottomNavbar(),
     );
   }

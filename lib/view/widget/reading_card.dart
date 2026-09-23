@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/constant_data.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +24,7 @@ class _ReadingCardState extends State<ReadingCard> {
   @override
   Widget build(BuildContext context) {
     final sensorProvider = context.watch<SensorNotifier>();
-    final device = sensorProvider.deviceNames[sensorProvider.activeDeviceID];
+    final device = sensorProvider.devices[sensorProvider.activeDeviceID];
     final readingList = device!.readingProvided;
 
     final prov = Provider.of<SensorNotifierMQTT>(context);

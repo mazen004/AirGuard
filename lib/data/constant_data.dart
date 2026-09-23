@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
 class ReadingMeta{
@@ -154,19 +154,25 @@ class Device{
   String deviceName;
   List<ReadingUnit> readingProvided;
   DateTime lastReadingTime;
+  int refreshRate;
   bool isOnline;
+  bool isGraphAverage;
 
   Device({
     required this.deviceName,
     required this.readingProvided,
     required this.lastReadingTime,
+    required this.refreshRate,
     required this.isOnline,
+    required this.isGraphAverage
   });
   Map<String, dynamic> toJson() => {
     'deviceName': deviceName,
     'readingProvided': readingProvided.map((r) => r.toJson()).toList(),
     'lastReadingTime': lastReadingTime.toIso8601String(),
+    'refreashRata': refreshRate,
     'isOnline': isOnline,
+    'graphIsAverage': isGraphAverage
   };
 
   factory Device.fromJson(Map<String, dynamic> json) => Device(
@@ -175,7 +181,21 @@ class Device{
         .map((r) => ReadingUnit.fromJson(r))
         .toList(),
     lastReadingTime: DateTime.parse(json['lastReadingTime']),
+    refreshRate: json['refreshRate'],
     isOnline: json['isOnline'] ?? Device.updateISOnline(DateTime.parse(json['lastReadingTime'])),
+    isGraphAverage: json['graphIsAverage']
   );
   static bool updateISOnline(DateTime time) => DateTime.now().difference(time).inSeconds > 90 ? false : true;
+}
+
+class Item {
+  final String title;
+  final IconData icon;
+  late Widget child;
+
+  Item({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
 }

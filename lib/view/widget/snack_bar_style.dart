@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:air_guard/data/constant.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:provider/provider.dart';
-import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 
 class SnackBarAnimationStyleWrapper extends StatefulWidget {
-  final String? text;
-  const SnackBarAnimationStyleWrapper({super.key, this.text});
+  final String text;
+  final IconData icon;
+  final Color bgColor; 
+  final Color textColor; 
+  const SnackBarAnimationStyleWrapper({super.key, required this.text, required this.icon, required this.bgColor, required this.textColor});
 
   @override
   State<SnackBarAnimationStyleWrapper> createState() => SnackBarAnimationStyleWrapperState();
@@ -20,21 +21,20 @@ class SnackBarAnimationStyleWrapperState extends State<SnackBarAnimationStyleWra
   void initState() {
     super.initState();
     controller = AnimationController(
-      duration: const Duration(milliseconds: 400), // Controls scroll-in speed
+      duration: const Duration(milliseconds: 400),
       vsync: this,
-    )..forward(); // Starts the scroll-in immediately
+    )..forward(); 
 
     offsetAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 2.0), // Starts below the screen limits
-      end: Offset.zero,             // Scrolls up to its resting position
+      begin: const Offset(0.0, 2.0), 
+      end: Offset.zero,             
     ).animate(CurvedAnimation(
       parent: controller,
-      curve: Curves.easeOutBack, // Gives it a premium smooth spring bounce
+      curve: Curves.easeOutBack, 
     ));
-
-    // Automatically trigger the scroll-out right before the SnackBar breaks down
+  
     Future.delayed(const Duration(milliseconds: 1700), () {
-      if (mounted) controller.reverse(); // Smoothly scrolls back out down the screen
+      if (mounted) controller.reverse(); 
     });
   }
 
@@ -49,13 +49,13 @@ class SnackBarAnimationStyleWrapperState extends State<SnackBarAnimationStyleWra
     return ValueListenableBuilder(
       valueListenable: Provider.of<SensorNotifierMQTT>(context, listen: false).isConnected,
       builder: (context, isConnected, child) {
-        final message = widget.text ?? (isConnected ? "MQTT Connection Success" : "MQTT Connection Failed"); //? error
+        final message = widget.text;
         return SlideTransition(
           position: offsetAnimation,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isConnected ? context.statusColors.safeBg : context.statusColors.dangerBg,
+              color: widget.bgColor,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -69,14 +69,14 @@ class SnackBarAnimationStyleWrapperState extends State<SnackBarAnimationStyleWra
               spacing: 8,
               children: [
                 Icon(
-                  isConnected ? FluentIcons.checkmark_circle_20_regular : FluentIcons.dismiss_circle_20_regular,
-                  color: isConnected ? context.statusColors.safeText : context.statusColors.dangerText,
+                  widget.icon,
+                  color: widget.textColor,
                 ),
                 Expanded(
                   child: Text(
                     message,
                     style: TextStyle(
-                      color: isConnected ? context.statusColors.safeText : context.statusColors.dangerText,
+                      color: widget.textColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

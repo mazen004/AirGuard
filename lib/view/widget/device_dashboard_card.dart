@@ -2,7 +2,7 @@
 // import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/data/constant_data.dart';
 // import 'package:fluentui_system_icons/fluentui_system_icons.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:air_guard/data/constant.dart';
+import 'package:air_guard/data/palatte.dart';
 import 'package:air_guard/data/notifiers.dart';
 import 'package:air_guard/view/widget_tree.dart';
 import 'package:air_guard/data/storage_manager.dart';
@@ -9,14 +9,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   bool is24hr = await StorageManager.getTimeFormat();
   String language = await StorageManager.getLanguage();
-  int refeshRate = await StorageManager.getRefreshRate();
   ThemeMode savedTheme = await StorageManager.getThemeMode();
-  bool isGraphAverage = await StorageManager.getGraphAverage();
   themeModeNotifier.value = savedTheme;
   isTimeFormat24hNotifier.value = is24hr;
   selectedLanguageNotifier.value = language;
-  selectedRefreashRateNotifier.value = refeshRate;
-  isGraphTypeAverageNotifier.value = isGraphAverage;
 
   runApp(
     MultiProvider(

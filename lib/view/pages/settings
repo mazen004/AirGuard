@@ -192,7 +192,12 @@ class SettingState extends State<Setting> {
                                       duration: const Duration(seconds: 2),
                                       backgroundColor: Colors.transparent,
                                       elevation: 0,
-                                      content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'MQTT Disconnected',),
+                                      margin: const EdgeInsets.only(
+                                        // bottom: 10,
+                                        left: 16,
+                                        right: 16,
+                                      ),
+                                      content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'MQTT Disconnected', icon: FluentIcons.plug_disconnected_20_regular, bgColor: context.statusColors.disconnectBg, textColor: context.statusColors.disconnectText),
                                     ),
                                   );
 
@@ -218,7 +223,12 @@ class SettingState extends State<Setting> {
                                     duration: const Duration(seconds: 2),
                                     backgroundColor: Colors.transparent,
                                     elevation: 0,
-                                    content: SnackBarAnimationStyleWrapper(key: UniqueKey()),
+                                    margin: const EdgeInsets.only(
+                                      // bottom: 10,
+                                      left: 16,
+                                      right: 16,
+                                    ),
+                                    content: SnackBarAnimationStyleWrapper(key: UniqueKey(), text: 'MQTT Connected', icon: FluentIcons.plug_connected_20_regular, bgColor: context.statusColors.connectBg, textColor: context.statusColors.connectText),
                                   ),
                                 );
                               },
